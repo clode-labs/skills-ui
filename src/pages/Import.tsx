@@ -1,213 +1,146 @@
-import { useState } from 'react'
-import {
-  Loader2,
-  CheckCircle,
-  AlertCircle,
-  Github,
-  FileDown,
-} from 'lucide-react'
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { api } from '../services/api';
+import type { ImportResponse } from '../types';
+import { Loader2, CheckCircle, AlertCircle, Github, FileDown } from 'lucide-react';
 
-import { api } from '../services/api'
-import type { ImportResponse, ApiError } from '../types'
-
-const Import = () => {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [result, setResult] = useState<ImportResponse | null>(null)
-  const [path, setPath] = useState('')
+export default function Import() {
+  const [url, setUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<ImportResponse | null>(null);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
-    setResult(null)
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setResult(null);
 
     try {
-      // Validate required fields
-      if (!path.trim()) {
-        setError('Please enter a GitHub URL')
-        setLoading(false)
-        return
-      }
-
-      // Validate URL format
-      if (!path.startsWith('https://github.com/')) {
-        setError('Please enter a valid GitHub URL (https://github.com/...)')
-        setLoading(false)
-        return
-      }
-
-      // Submit to API
-      const response = await api.importSkills({ path: path.trim() })
-      setResult(response)
+      const response = await api.submitRepo(url);
+      setResult(response);
     } catch (err) {
-      console.error('Import error:', err)
-      const apiError = err as ApiError
-
-      if (apiError.status === 401) {
-        setError('Authentication failed. Please log in and try again.')
-      } else if (apiError.status === 422 || apiError.status === 400) {
-        setError(apiError.message || 'Invalid URL. Please check your input.')
-      } else {
-        setError('Failed to import skills. Please try again.')
-      }
+      setError(err instanceof Error ? err.message : 'Import failed');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Import Skills</h1>
-        <p className="text-gray-600">Import skills from a GitHub repository</p>
+    <div className="bg-white min-h-screen">
+      {/* Navigation Tabs */}
+      <div className="border-b border-gray-200 bg-white">
+        <div className="max-w-6xl mx-auto px-4">
+          <nav className="flex items-center gap-6">
+            <Link to="/skills" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+              Skills
+            </Link>
+            <Link to="/authors" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+              Authors
+            </Link>
+            <Link to="/categories" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+              Categories
+            </Link>
+          </nav>
+        </div>
       </div>
 
-      {/* Error Message */}
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-          <AlertCircle
-            className="text-red-600 flex-shrink-0 mt-0.5"
-            size={20}
-          />
-          <div>
-            <h3 className="font-medium text-red-900">Error</h3>
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        </div>
-      )}
+      {/* Content */}
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold mb-2">Submit a Skill</h1>
+        <p className="text-gray-600 mb-6">
+          Enter a GitHub repository URL to import skills. The repository should contain
+          a <code className="bg-gray-100 px-1 rounded">skills/</code> folder with skill
+          subfolders containing <code className="bg-gray-100 px-1 rounded">SKILL.md</code> files.
+        </p>
 
-      {/* Import Form */}
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white rounded-xl border border-gray-200 p-8 mb-6"
-      >
-        <div className="space-y-6">
-          {/* GitHub URL */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              GitHub Repository or Folder URL *
-            </label>
-            <div className="relative">
-              <Github
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={20}
-              />
+        <form onSubmit={handleSubmit} className="mb-6">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Github className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
-                type="url"
-                value={path}
-                onChange={e => setPath(e.target.value)}
-                required
+                type="text"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://github.com/owner/repo or owner/repo"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 disabled={loading}
-                placeholder="https://github.com/owner/repo or https://github.com/owner/repo/tree/main/skills"
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
             </div>
-            <p className="text-sm text-gray-500 mt-2">
-              Enter a GitHub repository URL or a specific folder containing
-              skills. The system will discover all SKILL.md files in the path.
-            </p>
+            <button
+              type="submit"
+              disabled={loading || !url.trim()}
+              className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin" size={20} />
+                  Importing...
+                </>
+              ) : (
+                <>
+                  <FileDown size={20} />
+                  Import
+                </>
+              )}
+            </button>
           </div>
+        </form>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="animate-spin" size={20} />
-                <span>Importing...</span>
-              </>
-            ) : (
-              <>
-                <FileDown size={20} />
-                <span>Import Skills</span>
-              </>
-            )}
-          </button>
-        </div>
-      </form>
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-start gap-3">
+            <AlertCircle className="flex-shrink-0 mt-0.5" size={20} />
+            <div>{error}</div>
+          </div>
+        )}
 
-      {/* Results */}
-      {result && (
-        <div className="space-y-6">
-          {/* Success Summary */}
-          {result.imported && result.imported.length > 0 && (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <CheckCircle className="text-green-600" size={24} />
-                <h3 className="text-lg font-semibold text-green-900">
-                  Successfully Imported ({result.imported.length})
-                </h3>
-              </div>
-              <ul className="space-y-2">
-                {result.imported.map((item, index) => (
-                  <li
-                    key={index}
-                    className="flex items-center gap-2 text-green-700"
-                  >
-                    <span className="font-medium">{item.name}</span>
-                    <span className="text-green-600 text-sm">
-                      ({item.full_id})
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Rejected/Warnings */}
-          {result.rejected && result.rejected.length > 0 && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <AlertCircle className="text-yellow-600" size={24} />
-                <h3 className="text-lg font-semibold text-yellow-900">
-                  Not Imported ({result.rejected.length})
-                </h3>
-              </div>
-              <ul className="space-y-2">
-                {result.rejected.map((item, index) => (
-                  <li key={index} className="text-yellow-700">
-                    <span className="font-medium">{item.path}</span>
-                    <span className="text-yellow-600 text-sm block">
-                      {item.reason}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Empty Results */}
-          {(!result.imported || result.imported.length === 0) &&
-            (!result.rejected || result.rejected.length === 0) && (
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
-                <p className="text-gray-600">
-                  No skills found in the specified path.
-                </p>
+        {result && (
+          <div className="space-y-4">
+            {result.imported?.length > 0 && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle className="text-green-600" size={20} />
+                  <h3 className="font-semibold text-green-800">
+                    Successfully imported {result.imported.length} skill(s)
+                  </h3>
+                </div>
+                <ul className="list-disc list-inside text-green-700">
+                  {result.imported.map((item) => (
+                    <li key={item.full_id}>{item.full_id}</li>
+                  ))}
+                </ul>
               </div>
             )}
-        </div>
-      )}
 
-      {/* Info Box */}
-      <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="font-semibold text-blue-900 mb-2">How Import Works</h3>
-        <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
-          <li>The system scans the GitHub path for SKILL.md files</li>
-          <li>
-            Each SKILL.md file should contain skill metadata and instructions
-          </li>
-          <li>
-            Skills are created under your account (owner ID from your token)
-          </li>
-          <li>Existing skills with the same slug will be skipped</li>
-        </ul>
+            {result.rejected?.length > 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertCircle className="text-yellow-600" size={20} />
+                  <h3 className="font-semibold text-yellow-800">
+                    {result.rejected.length} item(s) could not be imported
+                  </h3>
+                </div>
+                <ul className="list-disc list-inside text-yellow-700">
+                  {result.rejected.map((item, i) => (
+                    <li key={i}>{item.path}: {item.reason}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Help text */}
+        <div className="mt-8 bg-gray-50 rounded-lg p-4">
+          <h3 className="font-semibold mb-2">Supported URL formats:</h3>
+          <ul className="list-disc list-inside text-gray-600 space-y-1">
+            <li><code>owner/repo</code></li>
+            <li><code>owner/repo/custom-skills-path</code></li>
+            <li><code>https://github.com/owner/repo</code></li>
+            <li><code>https://github.com/owner/repo/tree/main/skills</code></li>
+          </ul>
+        </div>
       </div>
     </div>
-  )
+  );
 }
-
-export default Import

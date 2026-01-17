@@ -3,182 +3,103 @@ import type {
   SkillResponse,
   CategoryListResponse,
   TagListResponse,
-  CreateSkillRequest,
-  CreateSkillResponse,
-  ImportRequest,
   ImportResponse,
-  SkillVersionResponse,
-  SkillVersionListResponse,
-  UpdateDraftRequest,
-  PublishVersionRequest,
   SkillWithVersionResponse,
-} from '../types'
-import { getAccessToken, getCurrentUserId } from './auth'
+  AuthorResponse,
+  AuthorListResponse,
+  FileTreeResponse,
+  FileContentResponse,
+} from '../types';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8086'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8086';
 
-// All endpoints require authentication
-async function fetchAPI<T>(
-  endpoint: string,
-  options: RequestInit = {},
-): Promise<T> {
-  const token = await getAccessToken()
+// Public API - no auth required
+async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
       ...options.headers,
     },
-  })
+  });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw {
-      status: response.status,
-      message: error.error?.message || response.statusText,
-      details: error,
-    }
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error?.message || `API error: ${response.status}`);
   }
 
-  return response.json()
+  return response.json();
 }
 
 export const api = {
   // Skills endpoints
-  getSkills: (params?: {
-    page?: number
-    limit?: number
-    status?: string
-    category?: string
-  }) => {
-    const query = new URLSearchParams()
-    if (params?.page) query.set('page', params.page.toString())
-    if (params?.limit) query.set('limit', params.limit.toString())
-    if (params?.status) query.set('status', params.status)
-    if (params?.category) query.set('category', params.category)
-
-    const queryString = query.toString()
-    return fetchAPI<SkillListResponse>(
-      `/skills${queryString ? `?${queryString}` : ''}`,
-    )
-  },
-
-  // Get skills owned by the current user
-  getMySkills: async (params?: { page?: number; limit?: number }) => {
-    const userId = getCurrentUserId()
-    const query = new URLSearchParams()
-    if (params?.page) query.set('page', params.page.toString())
-    if (params?.limit) query.set('limit', (params.limit || 50).toString())
-
-    // Get all skills and filter by owner_id client-side
-    // TODO: Add server-side owner filter endpoint
-    const queryString = query.toString()
-    const response = await fetchAPI<SkillListResponse>(
-      `/skills${queryString ? `?${queryString}` : ''}`,
-    )
-
-    // Filter to only show skills owned by the current user
-    const mySkills = response.data.filter(skill => skill.owner_id === userId)
-
-    return {
-      ...response,
-      data: mySkills,
-      pagination: {
-        ...response.pagination,
-        total_items: mySkills.length,
-        total_pages: 1,
-      },
-    }
+  getSkills: (params?: Record<string, string>) => {
+    const query = params ? '?' + new URLSearchParams(params).toString() : '';
+    return fetchAPI<SkillListResponse>(`/skills${query}`);
   },
 
   searchSkills: (query: string, page = 1, limit = 20) => {
-    const params = new URLSearchParams({
-      q: query,
-      page: page.toString(),
-      limit: limit.toString(),
-    })
-    return fetchAPI<SkillListResponse>(`/skills/search?${params}`)
+    const params = new URLSearchParams({ q: query, page: page.toString(), limit: limit.toString() });
+    return fetchAPI<SkillListResponse>(`/skills/search?${params}`);
   },
 
   getFeaturedSkills: () => {
-    return fetchAPI<SkillListResponse>('/skills/featured')
+    return fetchAPI<SkillListResponse>('/skills/featured');
   },
 
-  getSkill: (owner: string, slug: string) => {
-    return fetchAPI<SkillWithVersionResponse>(`/skills/${owner}/${slug}`)
+  getSkill: (owner: string, repo: string, name: string) => {
+    return fetchAPI<SkillWithVersionResponse>(`/skills/${owner}/${repo}/${name}`);
   },
 
   getSkillByFullId: (fullId: string) => {
-    return fetchAPI<SkillWithVersionResponse>(`/skills/${fullId}`)
+    return fetchAPI<SkillWithVersionResponse>(`/skills/${fullId}`);
   },
 
   // Categories endpoints
   getCategories: () => {
-    return fetchAPI<CategoryListResponse>('/categories')
+    return fetchAPI<CategoryListResponse>('/categories');
   },
 
   // Tags endpoints
   getTags: (page = 1, limit = 100) => {
-    return fetchAPI<TagListResponse>(`/tags?page=${page}&limit=${limit}`)
+    return fetchAPI<TagListResponse>(`/tags?page=${page}&limit=${limit}`);
   },
 
-  // Create skill endpoint
-  createSkill: async (
-    data: CreateSkillRequest,
-  ): Promise<CreateSkillResponse> => {
-    return fetchAPI<CreateSkillResponse>('/skills', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
+  // Author endpoints
+  getAuthors: (page = 1, limit = 20) => {
+    return fetchAPI<AuthorListResponse>(`/authors?page=${page}&limit=${limit}`);
   },
 
-  // Update skill metadata
-  updateSkill: async (
-    skillId: string,
-    data: { name?: string; description?: string; tags?: string[] },
-  ): Promise<SkillResponse> => {
-    return fetchAPI<SkillResponse>(`/skills/${skillId}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    })
+  getAuthor: (slug: string) => {
+    return fetchAPI<AuthorResponse>(`/authors/${slug}`);
   },
 
-  // Import skills endpoint
-  importSkills: async (data: ImportRequest): Promise<ImportResponse> => {
+  getAuthorSkills: (slug: string, page = 1, limit = 20) => {
+    return fetchAPI<SkillListResponse>(`/authors/${slug}/skills?page=${page}&limit=${limit}`);
+  },
+
+  // Import endpoint (public)
+  submitRepo: (url: string) => {
     return fetchAPI<ImportResponse>('/import', {
       method: 'POST',
-      body: JSON.stringify(data),
-    })
+      body: JSON.stringify({ path: url }),
+    });
   },
 
-  // Version endpoints
-  getSkillVersions: (skillId: string) => {
-    return fetchAPI<SkillVersionListResponse>(`/skills/${skillId}/versions`)
+  // Skill file endpoints
+  getSkillTree: (skillId: string) => {
+    return fetchAPI<FileTreeResponse>(`/skills/${skillId}/tree`);
   },
 
-  getSkillVersion: (skillId: string, version: string) => {
-    return fetchAPI<SkillVersionResponse>(
-      `/skills/${skillId}/versions/${version}`,
-    )
+  getSkillFile: (skillId: string, path: string) => {
+    return fetchAPI<FileContentResponse>(`/skills/${skillId}/file?path=${encodeURIComponent(path)}`);
   },
 
-  getSkillDraft: (skillId: string) => {
-    return fetchAPI<SkillVersionResponse>(`/skills/${skillId}/draft`)
+  getSkillMarkdown: (skillId: string) => {
+    return fetchAPI<SkillResponse>(`/skills/${skillId}/markdown`);
   },
 
-  updateSkillDraft: (skillId: string, data: UpdateDraftRequest) => {
-    return fetchAPI<SkillVersionResponse>(`/skills/${skillId}/draft`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    })
+  downloadSkillUrl: (skillId: string) => {
+    return `${API_BASE_URL}/skills/${skillId}/download`;
   },
-
-  publishSkillVersion: (skillId: string, data: PublishVersionRequest) => {
-    return fetchAPI<SkillVersionResponse>(`/skills/${skillId}/publish`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  },
-}
+};
