@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../services/api';
+import { api, authApi } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import type { ImportResponse } from '../types';
-import { Loader2, CheckCircle, AlertCircle, Github, FileDown } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, Github, FileDown, Lock } from 'lucide-react';
 
 export default function Import() {
+  const { isAuthenticated } = useAuth();
   const [url, setUrl] = useState('');
+  const [isPrivate, setIsPrivate] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ImportResponse | null>(null);
   const [error, setError] = useState('');
@@ -17,7 +20,10 @@ export default function Import() {
     setResult(null);
 
     try {
-      const response = await api.submitRepo(url);
+      // Use authenticated endpoint if logged in, otherwise public endpoint
+      const response = isAuthenticated
+        ? await authApi.submitRepo(url, isPrivate)
+        : await api.submitRepo(url);
       setResult(response);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Import failed');
@@ -85,6 +91,44 @@ export default function Import() {
               )}
             </button>
           </div>
+
+          {/* Visibility option - only shown when authenticated */}
+          {isAuthenticated && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-sm font-medium text-gray-700 mb-3">Skill visibility:</p>
+              <div className="space-y-2">
+                <label className="flex items-start gap-3 cursor-pointer p-2 rounded-md hover:bg-gray-100">
+                  <input
+                    type="radio"
+                    name="visibility"
+                    checked={!isPrivate}
+                    onChange={() => setIsPrivate(false)}
+                    className="mt-0.5 w-4 h-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                    disabled={loading}
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-gray-900">Public</span>
+                    <p className="text-xs text-gray-500">Visible to everyone in the skills registry</p>
+                  </div>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer p-2 rounded-md hover:bg-gray-100">
+                  <input
+                    type="radio"
+                    name="visibility"
+                    checked={isPrivate}
+                    onChange={() => setIsPrivate(true)}
+                    className="mt-0.5 w-4 h-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                    disabled={loading}
+                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-900">Private</span>
+                    <Lock size={14} className="text-gray-400" />
+                  </div>
+                  <p className="text-xs text-gray-500 -mt-5 ml-6">Only visible to you in "My Skills"</p>
+                </label>
+              </div>
+            </div>
+          )}
         </form>
 
         {error && (

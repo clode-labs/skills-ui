@@ -1,7 +1,8 @@
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, Lock } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import type { Skill } from '../types';
 
 interface HeaderProps {
@@ -15,6 +16,7 @@ const Header = ({ onSearch }: HeaderProps) => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const searchRef = useRef<HTMLDivElement>(null);
+  const { user, isAuthenticated, isLoading, signIn, signUp, signOut } = useAuth();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -127,12 +129,61 @@ const Header = ({ onSearch }: HeaderProps) => {
               <Plus size={16} />
               Submit Skill
             </Link>
-            <Link to="/signin" className="text-white/80 hover:text-white transition-colors">
-              Sign In
-            </Link>
-            <Link to="/signup" className="px-3 py-1.5 bg-white text-black rounded font-medium hover:bg-gray-100 transition-colors">
-              Sign Up
-            </Link>
+
+            {isLoading ? (
+              <div className="w-20 h-8 bg-gray-700 animate-pulse rounded"></div>
+            ) : isAuthenticated && user ? (
+              // Authenticated user menu
+              <div className="flex items-center gap-3">
+                <Link
+                  to="/my-skills"
+                  className="flex items-center gap-1.5 text-white/80 hover:text-white transition-colors"
+                >
+                  <Lock size={14} />
+                  My Skills
+                </Link>
+                <div className="flex items-center gap-2">
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.name}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
+                      <span className="text-sm font-medium text-white">
+                        {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                  )}
+                  <span className="text-white/80 text-sm hidden md:block">
+                    {user.name || user.email}
+                  </span>
+                </div>
+                <button
+                  onClick={signOut}
+                  className="text-white/60 hover:text-white text-sm transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              // Guest buttons
+              <>
+                <button
+                  onClick={signIn}
+                  className="text-white/80 hover:text-white transition-colors"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={signUp}
+                  className="px-3 py-1.5 bg-white text-black rounded font-medium hover:bg-gray-100 transition-colors"
+                >
+                  Sign Up
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
