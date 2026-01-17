@@ -1,28 +1,29 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { api } from '../services/api';
-import type { Category } from '../types';
-import { Loader2, Layers } from 'lucide-react';
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Loader2, Layers } from 'lucide-react'
+
+import { api } from '../services/api'
+import type { Category } from '../types'
 
 const Categories = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadCategories();
-  }, []);
+    loadCategories()
+  }, [])
 
   const loadCategories = async () => {
     try {
-      setLoading(true);
-      const response = await api.getCategories();
-      setCategories(response.data);
+      setLoading(true)
+      const response = await api.getCategories()
+      setCategories(response.data)
     } catch (error) {
-      console.error('Error loading categories:', error);
+      console.error('Error loading categories:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div>
@@ -37,7 +38,7 @@ const Categories = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categories.map((category) => (
+          {categories.map(category => (
             <Link
               key={category.id}
               to={`/skills?category=${category.slug}`}
@@ -67,7 +68,7 @@ const Categories = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default Categories;
+export default Categories

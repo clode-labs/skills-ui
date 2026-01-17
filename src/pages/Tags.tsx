@@ -1,28 +1,29 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { api } from '../services/api';
-import type { Tag } from '../types';
-import { Loader2, Tag as TagIcon } from 'lucide-react';
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Loader2, Tag as TagIcon } from 'lucide-react'
+
+import { api } from '../services/api'
+import type { Tag } from '../types'
 
 const Tags = () => {
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [tags, setTags] = useState<Tag[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadTags();
-  }, []);
+    loadTags()
+  }, [])
 
   const loadTags = async () => {
     try {
-      setLoading(true);
-      const response = await api.getTags();
-      setTags(response.data);
+      setLoading(true)
+      const response = await api.getTags()
+      setTags(response.data)
     } catch (error) {
-      console.error('Error loading tags:', error);
+      console.error('Error loading tags:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div>
@@ -38,7 +39,7 @@ const Tags = () => {
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex flex-wrap gap-3">
-            {tags.map((tag) => (
+            {tags.map(tag => (
               <Link
                 key={tag.id}
                 to={`/skills?tags=${tag.slug}`}
@@ -52,7 +53,7 @@ const Tags = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default Tags;
+export default Tags

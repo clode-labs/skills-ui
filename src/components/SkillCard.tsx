@@ -1,9 +1,10 @@
-import { Link } from 'react-router-dom';
-import { Star, Download, Tag } from 'lucide-react';
-import type { Skill } from '../types';
+import { Link } from 'react-router-dom'
+import { Star, Download, Tag } from 'lucide-react'
+
+import type { Skill } from '../types'
 
 interface SkillCardProps {
-  skill: Skill;
+  skill: Skill
 }
 
 const SkillCard = ({ skill }: SkillCardProps) => {
@@ -14,9 +15,9 @@ const SkillCard = ({ skill }: SkillCardProps) => {
       pending: 'bg-blue-100 text-blue-800 border-blue-200',
       draft: 'bg-gray-100 text-gray-800 border-gray-200',
       archived: 'bg-red-100 text-red-800 border-red-200',
-    };
-    return styles[status as keyof typeof styles] || styles.draft;
-  };
+    }
+    return styles[status as keyof typeof styles] || styles.draft
+  }
 
   return (
     <Link
@@ -35,13 +36,13 @@ const SkillCard = ({ skill }: SkillCardProps) => {
             <h3 className="font-semibold text-lg text-gray-900 line-clamp-1">
               {skill.name}
             </h3>
-            <p className="text-sm text-gray-500">
-              {skill.slug}
-            </p>
+            <p className="text-sm text-gray-500">{skill.slug}</p>
           </div>
         </div>
         {skill.status === 'featured' && (
-          <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusBadge(skill.status)}`}>
+          <span
+            className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusBadge(skill.status)}`}
+          >
             Featured
           </span>
         )}
@@ -55,7 +56,7 @@ const SkillCard = ({ skill }: SkillCardProps) => {
       {/* Tags */}
       {skill.tags && skill.tags.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
-          {skill.tags.slice(0, 3).map((tag) => (
+          {skill.tags.slice(0, 3).map(tag => (
             <span
               key={tag}
               className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
@@ -92,13 +93,11 @@ const SkillCard = ({ skill }: SkillCardProps) => {
           <span>{skill.download_count}</span>
         </div>
         {skill.license && (
-          <div className="ml-auto text-xs">
-            {skill.license}
-          </div>
+          <div className="ml-auto text-xs">{skill.license}</div>
         )}
       </div>
     </Link>
-  );
-};
+  )
+}
 
-export default SkillCard;
+export default SkillCard

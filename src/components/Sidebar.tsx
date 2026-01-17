@@ -1,8 +1,17 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Package, Tag, Layers, Upload, FileDown, Settings, FolderEdit } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom'
+import {
+  Home,
+  Package,
+  Tag,
+  Layers,
+  Upload,
+  FileDown,
+  Settings,
+  FolderEdit,
+} from 'lucide-react'
 
 const Sidebar = () => {
-  const location = useLocation();
+  const location = useLocation()
 
   const menuItems = [
     { icon: Home, label: 'Home', path: '/' },
@@ -12,14 +21,14 @@ const Sidebar = () => {
     { icon: Tag, label: 'Tags', path: '/tags' },
     { icon: Upload, label: 'Submit', path: '/submit' },
     { icon: FileDown, label: 'Import', path: '/import' },
-  ];
+  ]
 
   const isActive = (path: string) => {
     if (path === '/') {
-      return location.pathname === '/';
+      return location.pathname === '/'
     }
-    return location.pathname.startsWith(path);
-  };
+    return location.pathname.startsWith(path)
+  }
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 min-h-screen fixed left-0 top-0 flex flex-col">
@@ -36,8 +45,8 @@ const Sidebar = () => {
       {/* Navigation */}
       <nav className="flex-1 p-4">
         <ul className="space-y-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
+          {menuItems.map(item => {
+            const Icon = item.icon
             return (
               <li key={item.path}>
                 <Link
@@ -52,7 +61,7 @@ const Sidebar = () => {
                   <span>{item.label}</span>
                 </Link>
               </li>
-            );
+            )
           })}
         </ul>
       </nav>
@@ -68,7 +77,7 @@ const Sidebar = () => {
         </Link>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Sidebar;
+export default Sidebar
