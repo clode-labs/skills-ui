@@ -116,8 +116,15 @@ export default function SkillFilesExplorer({ skillId, skillName, skillDescriptio
     setSelectedFile(node);
     setContentLoading(true);
     try {
-      const fileName = node.path.split('/').pop() || node.path;
-      const response = await api.getSkillFile(skillId, fileName);
+      // Get the relative path from the skill root
+      // tree.path is the skill root (e.g., ".claude/skills/ai-sdk-v6")
+      // node.path is the full path (e.g., ".claude/skills/ai-sdk-v6/references/core-api.md")
+      // We need to extract "references/core-api.md"
+      let relativePath = node.path;
+      if (tree && tree.path && node.path.startsWith(tree.path + '/')) {
+        relativePath = node.path.slice(tree.path.length + 1);
+      }
+      const response = await api.getSkillFile(skillId, relativePath);
       setFileContent(response.content);
     } catch (error) {
       console.error('Failed to load file:', error);
