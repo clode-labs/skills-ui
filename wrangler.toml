@@ -1,0 +1,6 @@
+name = "skills-ui"
+pages_build_output_dir = "dist"
+
+[vars]
+NODE_ENV = "production"
+NODE_VERSION = "22.14.0"

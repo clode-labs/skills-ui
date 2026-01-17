@@ -99,6 +99,7 @@ src/
 The UI connects to the Aramb Skills backend API. Make sure the backend is running before starting the UI.
 
 Available endpoints:
+
 - `GET /skills` - List skills with filtering
 - `GET /skills/search` - Search skills
 - `GET /skills/featured` - Get featured skills
@@ -109,6 +110,7 @@ Available endpoints:
 ## Features Overview
 
 ### Home Page
+
 - Search bar for finding skills
 - Filter tabs (All, Featured, Latest)
 - Category dropdown filter
@@ -116,6 +118,7 @@ Available endpoints:
 - Pagination support
 
 ### Skill Detail Page
+
 - Comprehensive skill information
 - Author details
 - Download and star counts
@@ -124,12 +127,14 @@ Available endpoints:
 - Related metadata (license, compatibility, etc.)
 
 ### Submit Page
+
 - Form to submit new skills
 - Category selection
 - Tag management
 - Validation
 
 ### Categories & Tags
+
 - Browse skills by category
 - Browse skills by tag
 - Click to filter skills
@@ -139,12 +144,14 @@ Available endpoints:
 ### Colors
 
 The primary color scheme uses red/orange gradients. To change this, update the colors in:
+
 - `tailwind.config.js` - Theme colors
 - Component class names with color utilities
 
 ### Layout
 
 The sidebar width is fixed at 256px (`w-64`). To adjust:
+
 - Update `Sidebar.tsx` width class
 - Update `Layout.tsx` left margin (`ml-64`)
 
@@ -158,6 +165,7 @@ The sidebar width is fixed at 256px (`w-64`). To adjust:
 ## Contributing
 
 When adding new features:
+
 1. Add TypeScript types to `src/types/`
 2. Create reusable components in `src/components/`
 3. Use the existing API service pattern

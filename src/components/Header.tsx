@@ -1,25 +1,25 @@
-import { Search } from 'lucide-react';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Search } from 'lucide-react'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 interface HeaderProps {
-  onSearch?: (query: string) => void;
+  onSearch?: (query: string) => void
 }
 
 const Header = ({ onSearch }: HeaderProps) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('')
+  const navigate = useNavigate()
 
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     if (searchQuery.trim()) {
       if (onSearch) {
-        onSearch(searchQuery);
+        onSearch(searchQuery)
       } else {
-        navigate(`/skills?search=${encodeURIComponent(searchQuery)}`);
+        navigate(`/skills?search=${encodeURIComponent(searchQuery)}`)
       }
     }
-  };
+  }
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
@@ -28,12 +28,15 @@ const Header = ({ onSearch }: HeaderProps) => {
           {/* Search Bar */}
           <form onSubmit={handleSearch} className="flex-1 max-w-2xl">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <Search
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                size={20}
+              />
               <input
                 type="text"
                 placeholder="Search skills..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
             </div>
@@ -54,7 +57,7 @@ const Header = ({ onSearch }: HeaderProps) => {
         </div>
       </div>
     </header>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header

@@ -1,120 +1,132 @@
-import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { api } from '../services/api';
-import type { Skill, SkillVersion } from '../types';
-import { Loader2, Save, Send, ArrowLeft, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { useEffect, useState } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import {
+  Loader2,
+  Save,
+  Send,
+  ArrowLeft,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+} from 'lucide-react'
+
+import { api } from '../services/api'
+import type { Skill, SkillVersion, ApiError } from '../types'
 
 const SkillEditor = () => {
-  const { owner, slug } = useParams<{ owner: string; slug: string }>();
+  const { owner, slug } = useParams<{ owner: string; slug: string }>()
 
-  const [skill, setSkill] = useState<Skill | null>(null);
-  const [draft, setDraft] = useState<SkillVersion | null>(null);
-  const [versions, setVersions] = useState<SkillVersion[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [publishing, setPublishing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [skill, setSkill] = useState<Skill | null>(null)
+  const [draft, setDraft] = useState<SkillVersion | null>(null)
+  const [versions, setVersions] = useState<SkillVersion[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [publishing, setPublishing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
-  const [instructions, setInstructions] = useState('');
-  const [publishVersion, setPublishVersion] = useState('');
-  const [publishChangelog, setPublishChangelog] = useState('');
-  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [instructions, setInstructions] = useState('')
+  const [publishVersion, setPublishVersion] = useState('')
+  const [publishChangelog, setPublishChangelog] = useState('')
+  const [showPublishModal, setShowPublishModal] = useState(false)
 
   useEffect(() => {
     if (owner && slug) {
-      loadSkillData();
+      loadSkillData()
     }
-  }, [owner, slug]);
+  }, [owner, slug])
 
   const loadSkillData = async () => {
     try {
-      setLoading(true);
-      setError(null);
+      setLoading(true)
+      setError(null)
 
       // First fetch skill details to get the skill ID
-      const skillResponse = await api.getSkill(owner!, slug!);
-      const skillData = skillResponse.data;
-      setSkill(skillData);
+      const skillResponse = await api.getSkill(owner!, slug!)
+      const skillData = skillResponse.data
+      setSkill(skillData)
 
       // Now fetch draft and versions using the skill ID
       const [draftResponse, versionsResponse] = await Promise.all([
         api.getSkillDraft(skillData.id),
         api.getSkillVersions(skillData.id),
-      ]);
+      ])
 
-      setDraft(draftResponse.data);
-      setVersions(versionsResponse.data);
-      setInstructions(draftResponse.data.instructions);
-    } catch (err: any) {
-      console.error('Error loading skill data:', err);
-      setError(err.message || 'Failed to load skill data');
+      setDraft(draftResponse.data)
+      setVersions(versionsResponse.data)
+      setInstructions(draftResponse.data.instructions)
+    } catch (err) {
+      console.error('Error loading skill data:', err)
+      const apiError = err as ApiError
+      setError(apiError.message || 'Failed to load skill data')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleSaveDraft = async () => {
-    if (!skill) return;
+    if (!skill) return
 
     try {
-      setSaving(true);
-      setError(null);
-      setSuccess(null);
+      setSaving(true)
+      setError(null)
+      setSuccess(null)
 
       const response = await api.updateSkillDraft(skill.id, {
         instructions: instructions,
-      });
+      })
 
-      setDraft(response.data);
-      setSuccess('Draft saved successfully');
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err: any) {
-      console.error('Error saving draft:', err);
-      setError(err.message || 'Failed to save draft');
+      setDraft(response.data)
+      setSuccess('Draft saved successfully')
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err) {
+      console.error('Error saving draft:', err)
+      const apiError = err as ApiError
+      setError(apiError.message || 'Failed to save draft')
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   const handlePublish = async () => {
-    if (!skill) return;
+    if (!skill) return
 
     try {
-      setPublishing(true);
-      setError(null);
+      setPublishing(true)
+      setError(null)
 
       await api.publishSkillVersion(skill.id, {
         version: publishVersion || undefined,
         changelog: publishChangelog || undefined,
-      });
+      })
 
-      setShowPublishModal(false);
-      setPublishVersion('');
-      setPublishChangelog('');
-      setSuccess('Version published successfully!');
+      setShowPublishModal(false)
+      setPublishVersion('')
+      setPublishChangelog('')
+      setSuccess('Version published successfully!')
 
       // Reload versions
-      const versionsResponse = await api.getSkillVersions(skill.id);
-      setVersions(versionsResponse.data);
+      const versionsResponse = await api.getSkillVersions(skill.id)
+      setVersions(versionsResponse.data)
 
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err: any) {
-      console.error('Error publishing version:', err);
-      setError(err.message || 'Failed to publish version');
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err) {
+      console.error('Error publishing version:', err)
+      const apiError = err as ApiError
+      setError(apiError.message || 'Failed to publish version')
     } finally {
-      setPublishing(false);
+      setPublishing(false)
     }
-  };
+  }
 
-  const hasChanges = draft ? instructions !== draft.instructions : false;
+  const hasChanges = draft ? instructions !== draft.instructions : false
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="animate-spin text-red-600" size={40} />
       </div>
-    );
+    )
   }
 
   if (error && !skill) {
@@ -122,7 +134,10 @@ const SkillEditor = () => {
       <div className="max-w-3xl mx-auto">
         <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
           <div className="flex items-start gap-3">
-            <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+            <AlertCircle
+              className="text-red-600 flex-shrink-0 mt-0.5"
+              size={20}
+            />
             <div>
               <h3 className="font-medium text-red-900">Error Loading Skill</h3>
               <p className="text-sm text-red-700 mt-1">{error}</p>
@@ -137,7 +152,7 @@ const SkillEditor = () => {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -184,14 +199,20 @@ const SkillEditor = () => {
       {/* Messages */}
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-          <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={20} />
+          <AlertCircle
+            className="text-red-600 flex-shrink-0 mt-0.5"
+            size={20}
+          />
           <p className="text-sm text-red-700">{error}</p>
         </div>
       )}
 
       {success && (
         <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
-          <CheckCircle className="text-green-600 flex-shrink-0 mt-0.5" size={20} />
+          <CheckCircle
+            className="text-green-600 flex-shrink-0 mt-0.5"
+            size={20}
+          />
           <p className="text-sm text-green-700">{success}</p>
         </div>
       )}
@@ -201,15 +222,18 @@ const SkillEditor = () => {
         <div className="flex-1">
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <h2 className="font-semibold text-gray-900">Draft Instructions</h2>
+              <h2 className="font-semibold text-gray-900">
+                Draft Instructions
+              </h2>
               <p className="text-sm text-gray-500 mt-1">
-                Edit your skill instructions below. Save your changes before publishing.
+                Edit your skill instructions below. Save your changes before
+                publishing.
               </p>
             </div>
             <div className="p-6">
               <textarea
                 value={instructions}
-                onChange={(e) => setInstructions(e.target.value)}
+                onChange={e => setInstructions(e.target.value)}
                 rows={25}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-mono text-sm resize-none"
                 placeholder="Enter your skill instructions..."
@@ -228,10 +252,12 @@ const SkillEditor = () => {
               {versions.length === 0 ? (
                 <div className="px-4 py-8 text-center text-gray-500">
                   <p className="text-sm">No published versions yet</p>
-                  <p className="text-xs mt-1">Publish your first version to see it here</p>
+                  <p className="text-xs mt-1">
+                    Publish your first version to see it here
+                  </p>
                 </div>
               ) : (
-                versions.map((version) => (
+                versions.map(version => (
                   <div
                     key={version.id}
                     className={`px-4 py-3 ${version.is_latest ? 'bg-green-50' : ''}`}
@@ -265,7 +291,9 @@ const SkillEditor = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl w-full max-w-md mx-4 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Publish New Version</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Publish New Version
+              </h3>
             </div>
             <div className="p-6 space-y-4">
               <div>
@@ -275,7 +303,7 @@ const SkillEditor = () => {
                 <input
                   type="text"
                   value={publishVersion}
-                  onChange={(e) => setPublishVersion(e.target.value)}
+                  onChange={e => setPublishVersion(e.target.value)}
                   placeholder="e.g., 1.0.0 (auto-incremented if empty)"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
@@ -286,7 +314,7 @@ const SkillEditor = () => {
                 </label>
                 <textarea
                   value={publishChangelog}
-                  onChange={(e) => setPublishChangelog(e.target.value)}
+                  onChange={e => setPublishChangelog(e.target.value)}
                   rows={3}
                   placeholder="Describe what changed in this version..."
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
@@ -317,7 +345,7 @@ const SkillEditor = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default SkillEditor;
+export default SkillEditor

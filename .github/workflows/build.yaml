@@ -1,0 +1,67 @@
+name: Deploy Skills UI to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+
+env:
+  DEV_API_URL: https://api.clode.space/skills-registry
+  PROD_API_URL: https://api.clode.io/skills-registry
+  DEV_AUTH_URL: https://auth.clode.space/auth
+  PROD_AUTH_URL: https://auth.clode.io/auth
+  DEV_WEBAPP_URL: https://app.clode.space
+  PROD_WEBAPP_URL: https://app.clode.io
+
+permissions:
+  contents: read
+  pull-requests: write
+  deployments: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ inputs.environment || 'dev' }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ inputs.environment == 'prod' && env.PROD_API_URL || env.DEV_API_URL }}
+          VITE_AUTH_URL: ${{ inputs.environment == 'prod' && env.PROD_AUTH_URL || env.DEV_AUTH_URL }}
+          VITE_WEBAPP_URL: ${{ inputs.environment == 'prod' && env.PROD_WEBAPP_URL || env.DEV_WEBAPP_URL }}
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_WORKER_PAGES_TOKEN }}
+          # prod → main (CF production), dev/PR → branch name (CF preview)
+          command: pages deploy --branch=${{ inputs.environment == 'prod' && 'main' || (github.event_name == 'pull_request' && github.head_ref || 'dev') }}

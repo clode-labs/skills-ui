@@ -1,13 +1,14 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Layout from './components/Layout';
-import Home from './pages/Home';
-import SkillDetail from './pages/SkillDetail';
-import Categories from './pages/Categories';
-import Tags from './pages/Tags';
-import Submit from './pages/Submit';
-import Import from './pages/Import';
-import MySkills from './pages/MySkills';
-import SkillEditor from './pages/SkillEditor';
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+
+import Layout from './components/Layout'
+import Home from './pages/Home'
+import SkillDetail from './pages/SkillDetail'
+import Categories from './pages/Categories'
+import Tags from './pages/Tags'
+import Submit from './pages/Submit'
+import Import from './pages/Import'
+import MySkills from './pages/MySkills'
+import SkillEditor from './pages/SkillEditor'
 
 function App() {
   return (
@@ -22,11 +23,14 @@ function App() {
           <Route path="/submit" element={<Submit />} />
           <Route path="/import" element={<Import />} />
           <Route path="/my-skills" element={<MySkills />} />
-          <Route path="/my-skills/:owner/:slug/edit" element={<SkillEditor />} />
+          <Route
+            path="/my-skills/:owner/:slug/edit"
+            element={<SkillEditor />}
+          />
         </Routes>
       </Layout>
     </BrowserRouter>
-  );
+  )
 }
 
-export default App;
+export default App

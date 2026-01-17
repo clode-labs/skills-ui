@@ -1,51 +1,63 @@
-import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { api } from '../services/api';
-import type { Skill } from '../types';
-import { ArrowLeft, Star, Download, ExternalLink, Tag, Calendar } from 'lucide-react';
-import { Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import {
+  ArrowLeft,
+  Star,
+  Download,
+  ExternalLink,
+  Tag,
+  Calendar,
+} from 'lucide-react'
+import { Loader2 } from 'lucide-react'
+
+import { api } from '../services/api'
+import type { Skill } from '../types'
 
 const SkillDetail = () => {
-  const { owner, slug } = useParams<{ owner: string; slug: string }>();
-  const [skill, setSkill] = useState<Skill | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { owner, slug } = useParams<{ owner: string; slug: string }>()
+  const [skill, setSkill] = useState<Skill | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (owner && slug) {
-      loadSkill();
+      loadSkill()
     }
-  }, [owner, slug]);
+  }, [owner, slug])
 
   const loadSkill = async () => {
     try {
-      setLoading(true);
-      const response = await api.getSkill(owner!, slug!);
-      setSkill(response.data);
+      setLoading(true)
+      const response = await api.getSkill(owner!, slug!)
+      setSkill(response.data)
     } catch (error) {
-      console.error('Error loading skill:', error);
+      console.error('Error loading skill:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="animate-spin text-red-600" size={40} />
       </div>
-    );
+    )
   }
 
   if (!skill) {
     return (
       <div className="text-center py-20">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Skill Not Found</h2>
-        <p className="text-gray-600 mb-6">The skill you're looking for doesn't exist.</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          Skill Not Found
+        </h2>
+        <p className="text-gray-600 mb-6">
+          The skill you're looking for doesn't exist.
+        </p>
         <Link to="/" className="text-red-600 hover:text-red-700 font-medium">
           Back to Home
         </Link>
       </div>
-    );
+    )
   }
 
   return (
@@ -76,9 +88,7 @@ const SkillDetail = () => {
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
                   {skill.name}
                 </h1>
-                <p className="text-gray-600">
-                  {skill.full_id}
-                </p>
+                <p className="text-gray-600">{skill.full_id}</p>
               </div>
 
               {/* Status Badge */}
@@ -119,7 +129,7 @@ const SkillDetail = () => {
         {/* Tags */}
         {skill.tags && skill.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-6">
-            {skill.tags.map((tag) => (
+            {skill.tags.map(tag => (
               <span
                 key={tag}
                 className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
@@ -159,7 +169,9 @@ const SkillDetail = () => {
             {skill.category_name && (
               <div>
                 <dt className="text-sm text-gray-600">Category</dt>
-                <dd className="text-gray-900 font-medium">{skill.category_name}</dd>
+                <dd className="text-gray-900 font-medium">
+                  {skill.category_name}
+                </dd>
               </div>
             )}
             {skill.license && (
@@ -171,13 +183,17 @@ const SkillDetail = () => {
             {skill.compatibility && (
               <div>
                 <dt className="text-sm text-gray-600">Compatibility</dt>
-                <dd className="text-gray-900 font-medium">{skill.compatibility}</dd>
+                <dd className="text-gray-900 font-medium">
+                  {skill.compatibility}
+                </dd>
               </div>
             )}
             {skill.source_type && (
               <div>
                 <dt className="text-sm text-gray-600">Source Type</dt>
-                <dd className="text-gray-900 font-medium capitalize">{skill.source_type}</dd>
+                <dd className="text-gray-900 font-medium capitalize">
+                  {skill.source_type}
+                </dd>
               </div>
             )}
           </dl>
@@ -189,25 +205,33 @@ const SkillDetail = () => {
           <dl className="space-y-3">
             <div>
               <dt className="text-sm text-gray-600">Full ID</dt>
-              <dd className="text-gray-900 font-mono text-sm">{skill.full_id}</dd>
+              <dd className="text-gray-900 font-mono text-sm">
+                {skill.full_id}
+              </dd>
             </div>
             <div>
               <dt className="text-sm text-gray-600">Owner ID</dt>
-              <dd className="text-gray-900 font-mono text-sm">{skill.owner_id}</dd>
+              <dd className="text-gray-900 font-mono text-sm">
+                {skill.owner_id}
+              </dd>
             </div>
             <div>
               <dt className="text-sm text-gray-600">Status</dt>
-              <dd className="text-gray-900 font-medium capitalize">{skill.status}</dd>
+              <dd className="text-gray-900 font-medium capitalize">
+                {skill.status}
+              </dd>
             </div>
             <div>
               <dt className="text-sm text-gray-600">Created</dt>
-              <dd className="text-gray-900">{new Date(skill.created_at).toLocaleDateString()}</dd>
+              <dd className="text-gray-900">
+                {new Date(skill.created_at).toLocaleDateString()}
+              </dd>
             </div>
           </dl>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default SkillDetail;
+export default SkillDetail

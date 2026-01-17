@@ -1,9 +1,10 @@
-import type { ReactNode } from 'react';
-import Sidebar from './Sidebar';
-import Header from './Header';
+import type { ReactNode } from 'react'
+
+import Sidebar from './Sidebar'
+import Header from './Header'
 
 interface LayoutProps {
-  children: ReactNode;
+  children: ReactNode
 }
 
 const Layout = ({ children }: LayoutProps) => {
@@ -12,12 +13,10 @@ const Layout = ({ children }: LayoutProps) => {
       <Sidebar />
       <div className="flex-1 ml-64">
         <Header />
-        <main className="p-8">
-          {children}
-        </main>
+        <main className="p-8">{children}</main>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Layout;
+export default Layout
