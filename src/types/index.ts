@@ -20,6 +20,22 @@ export interface Skill {
   updated_at: string
   published_at?: string
   tags?: string[]
+
+  // Author fields
+  repo_id?: string
+  author_name?: string
+  author_url?: string
+  author_avatar_url?: string
+  author_slug?: string
+  instructions?: string
+
+  // Repo fields (joined)
+  repo_stars?: number
+  repo_forks?: number
+  repo_license?: string
+  repo_owner?: string
+  repo_name?: string
+  repo_url?: string
 }
 
 export interface Category {
@@ -29,6 +45,7 @@ export interface Category {
   description?: string
   icon?: string
   sort_order: number
+  skill_count?: number
   created_at: string
   updated_at: string
 }
@@ -123,6 +140,47 @@ export interface ImportResponse {
   rejected: ImportRejection[]
 }
 
+// Async import job response (returned when async mode is enabled)
+export interface ImportJobResponse {
+  success: boolean
+  job_id: string
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  message: string
+}
+
+// Import job details
+export interface ImportJob {
+  id: string
+  github_url: string
+  user_id?: string
+  is_private: boolean
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  retry_count: number
+  max_retries: number
+  last_error?: string
+  imported_skills?: ImportResult[]
+  rejected_skills?: ImportRejection[]
+  worker_id?: string
+  started_at?: string
+  completed_at?: string
+  created_at: string
+  updated_at: string
+}
+
+// Import job status response
+export interface ImportJobStatusResponse {
+  job: ImportJob
+  success_count: number
+  failed_count: number
+}
+
+// Type guard to check if response is async job response
+export function isAsyncImportResponse(
+  response: ImportResponse | ImportJobResponse,
+): response is ImportJobResponse {
+  return 'job_id' in response
+}
+
 export interface SkillVersionResponse {
   success: boolean
   data: SkillVersion
@@ -148,13 +206,62 @@ export interface SkillWithVersionResponse {
   data: SkillWithVersion
 }
 
-export interface SkillQueryParams {
-  limit?: number
-  status?: string
-  category?: string
+// Repo interface
+export interface Repo {
+  id: string
+  owner: string
+  name: string
+  url?: string
+  license?: string
+  stars: number
+  forks: number
+  owner_name?: string
+  owner_url?: string
+  owner_avatar_url?: string
+  skills_path?: string
+  last_parsed_at?: string
+  created_at: string
+  updated_at: string
 }
 
-export interface ApiError {
-  status?: number
-  message?: string
+// Author interface
+export interface Author {
+  slug: string
+  name: string
+  url?: string
+  avatar_url?: string
+  skill_count: number
+}
+
+// File tree interfaces
+export interface FileNode {
+  name: string
+  path: string
+  type: 'file' | 'dir'
+  size?: number
+  children?: FileNode[]
+}
+
+// Response types for new endpoints
+export interface AuthorResponse {
+  success: boolean
+  data: Author
+}
+
+export interface AuthorListResponse {
+  success: boolean
+  data: Author[]
+  pagination: PaginationMeta
+}
+
+export interface FileTreeResponse {
+  success: boolean
+  data: FileNode
+}
+
+export interface FileContentResponse {
+  success: boolean
+  path: string
+  content: string
+  is_binary: boolean
 }

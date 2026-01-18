@@ -3,94 +3,67 @@ import type {
   SkillResponse,
   CategoryListResponse,
   TagListResponse,
-  CreateSkillRequest,
-  CreateSkillResponse,
-  ImportRequest,
   ImportResponse,
-  SkillVersionResponse,
-  SkillVersionListResponse,
-  UpdateDraftRequest,
-  PublishVersionRequest,
+  ImportJobResponse,
+  ImportJobStatusResponse,
   SkillWithVersionResponse,
+  AuthorResponse,
+  AuthorListResponse,
+  FileTreeResponse,
+  FileContentResponse,
 } from '../types'
-import { getAccessToken, getCurrentUserId } from './auth'
+import { getAccessToken } from './auth'
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:8086'
 
-// All endpoints require authentication
+interface FetchOptions extends RequestInit {
+  requiresAuth?: boolean
+}
+
+// Fetch wrapper with optional auth support
 async function fetchAPI<T>(
   endpoint: string,
-  options: RequestInit = {},
+  options: FetchOptions = {},
 ): Promise<T> {
-  const token = await getAccessToken()
+  const {
+    requiresAuth = false,
+    headers: customHeaders,
+    ...fetchOptions
+  } = options
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(customHeaders as Record<string, string>),
+  }
+
+  // Add auth header if required or if token is available
+  if (requiresAuth) {
+    const token = getAccessToken()
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+  }
+
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
+    ...fetchOptions,
+    headers,
   })
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}))
-    throw {
-      status: response.status,
-      message: error.error?.message || response.statusText,
-      details: error,
-    }
+    throw new Error(error.error?.message || `API error: ${response.status}`)
   }
 
   return response.json()
 }
 
+// Public API - no auth required
 export const api = {
   // Skills endpoints
-  getSkills: (params?: {
-    page?: number
-    limit?: number
-    status?: string
-    category?: string
-  }) => {
-    const query = new URLSearchParams()
-    if (params?.page) query.set('page', params.page.toString())
-    if (params?.limit) query.set('limit', params.limit.toString())
-    if (params?.status) query.set('status', params.status)
-    if (params?.category) query.set('category', params.category)
-
-    const queryString = query.toString()
-    return fetchAPI<SkillListResponse>(
-      `/skills${queryString ? `?${queryString}` : ''}`,
-    )
-  },
-
-  // Get skills owned by the current user
-  getMySkills: async (params?: { page?: number; limit?: number }) => {
-    const userId = getCurrentUserId()
-    const query = new URLSearchParams()
-    if (params?.page) query.set('page', params.page.toString())
-    if (params?.limit) query.set('limit', (params.limit || 50).toString())
-
-    // Get all skills and filter by owner_id client-side
-    // TODO: Add server-side owner filter endpoint
-    const queryString = query.toString()
-    const response = await fetchAPI<SkillListResponse>(
-      `/skills${queryString ? `?${queryString}` : ''}`,
-    )
-
-    // Filter to only show skills owned by the current user
-    const mySkills = response.data.filter(skill => skill.owner_id === userId)
-
-    return {
-      ...response,
-      data: mySkills,
-      pagination: {
-        ...response.pagination,
-        total_items: mySkills.length,
-        total_pages: 1,
-      },
-    }
+  getSkills: (params?: Record<string, string>) => {
+    const query = params ? '?' + new URLSearchParams(params).toString() : ''
+    return fetchAPI<SkillListResponse>(`/skills${query}`)
   },
 
   searchSkills: (query: string, page = 1, limit = 20) => {
@@ -106,8 +79,10 @@ export const api = {
     return fetchAPI<SkillListResponse>('/skills/featured')
   },
 
-  getSkill: (owner: string, slug: string) => {
-    return fetchAPI<SkillWithVersionResponse>(`/skills/${owner}/${slug}`)
+  getSkill: (owner: string, repo: string, name: string) => {
+    return fetchAPI<SkillWithVersionResponse>(
+      `/skills/${owner}/${repo}/${name}`,
+    )
   },
 
   getSkillByFullId: (fullId: string) => {
@@ -124,61 +99,135 @@ export const api = {
     return fetchAPI<TagListResponse>(`/tags?page=${page}&limit=${limit}`)
   },
 
-  // Create skill endpoint
-  createSkill: async (
-    data: CreateSkillRequest,
-  ): Promise<CreateSkillResponse> => {
-    return fetchAPI<CreateSkillResponse>('/skills', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
+  // Author endpoints
+  getAuthors: (page = 1, limit = 20) => {
+    return fetchAPI<AuthorListResponse>(`/authors?page=${page}&limit=${limit}`)
   },
 
-  // Update skill metadata
-  updateSkill: async (
-    skillId: string,
-    data: { name?: string; description?: string; tags?: string[] },
-  ): Promise<SkillResponse> => {
-    return fetchAPI<SkillResponse>(`/skills/${skillId}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    })
+  getAuthor: (slug: string) => {
+    return fetchAPI<AuthorResponse>(`/authors/${slug}`)
   },
 
-  // Import skills endpoint
-  importSkills: async (data: ImportRequest): Promise<ImportResponse> => {
-    return fetchAPI<ImportResponse>('/import', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  },
-
-  // Version endpoints
-  getSkillVersions: (skillId: string) => {
-    return fetchAPI<SkillVersionListResponse>(`/skills/${skillId}/versions`)
-  },
-
-  getSkillVersion: (skillId: string, version: string) => {
-    return fetchAPI<SkillVersionResponse>(
-      `/skills/${skillId}/versions/${version}`,
+  getAuthorSkills: (slug: string, page = 1, limit = 20) => {
+    return fetchAPI<SkillListResponse>(
+      `/authors/${slug}/skills?page=${page}&limit=${limit}`,
     )
   },
 
-  getSkillDraft: (skillId: string) => {
-    return fetchAPI<SkillVersionResponse>(`/skills/${skillId}/draft`)
-  },
-
-  updateSkillDraft: (skillId: string, data: UpdateDraftRequest) => {
-    return fetchAPI<SkillVersionResponse>(`/skills/${skillId}/draft`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    })
-  },
-
-  publishSkillVersion: (skillId: string, data: PublishVersionRequest) => {
-    return fetchAPI<SkillVersionResponse>(`/skills/${skillId}/publish`, {
+  // Import endpoint (public) - may return sync or async response
+  submitRepo: (url: string) => {
+    return fetchAPI<ImportResponse | ImportJobResponse>('/import', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ path: url }),
     })
+  },
+
+  // Get import job status
+  getJobStatus: (jobId: string) => {
+    return fetchAPI<ImportJobStatusResponse>(`/import/jobs/${jobId}`)
+  },
+
+  // Skill file endpoints
+  getSkillTree: (skillId: string) => {
+    return fetchAPI<FileTreeResponse>(`/skills/${skillId}/tree`)
+  },
+
+  getSkillFile: (skillId: string, path: string) => {
+    return fetchAPI<FileContentResponse>(
+      `/skills/${skillId}/file?path=${encodeURIComponent(path)}`,
+    )
+  },
+
+  getSkillMarkdown: (skillId: string) => {
+    return fetchAPI<SkillResponse>(`/skills/${skillId}/markdown`)
+  },
+
+  downloadSkillUrl: (skillId: string) => {
+    return `${API_BASE_URL}/skills/${skillId}/download`
+  },
+}
+
+// Authenticated API - requires JWT token (uses /api/v1 prefix)
+export const authApi = {
+  // Skills endpoints (returns public + user's private skills)
+  getSkills: (params?: Record<string, string>) => {
+    const query = params ? '?' + new URLSearchParams(params).toString() : ''
+    return fetchAPI<SkillListResponse>(`/api/v1/skills${query}`, {
+      requiresAuth: true,
+    })
+  },
+
+  searchSkills: (query: string, page = 1, limit = 20) => {
+    const params = new URLSearchParams({
+      q: query,
+      page: page.toString(),
+      limit: limit.toString(),
+    })
+    return fetchAPI<SkillListResponse>(`/api/v1/skills/search?${params}`, {
+      requiresAuth: true,
+    })
+  },
+
+  getFeaturedSkills: () => {
+    return fetchAPI<SkillListResponse>('/api/v1/skills/featured', {
+      requiresAuth: true,
+    })
+  },
+
+  getSkill: (owner: string, repo: string, name: string) => {
+    return fetchAPI<SkillWithVersionResponse>(
+      `/api/v1/skills/${owner}/${repo}/${name}`,
+      { requiresAuth: true },
+    )
+  },
+
+  // Private skills only
+  getPrivateSkills: (page = 1, limit = 20) => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    })
+    return fetchAPI<SkillListResponse>(`/api/v1/skills/private?${params}`, {
+      requiresAuth: true,
+    })
+  },
+
+  // Import with private option - may return sync or async response
+  submitRepo: (url: string, isPrivate = false) => {
+    return fetchAPI<ImportResponse | ImportJobResponse>('/api/v1/import', {
+      method: 'POST',
+      body: JSON.stringify({ path: url, is_private: isPrivate }),
+      requiresAuth: true,
+    })
+  },
+
+  // Get import job status (authenticated)
+  getJobStatus: (jobId: string) => {
+    return fetchAPI<ImportJobStatusResponse>(`/api/v1/import/jobs/${jobId}`, {
+      requiresAuth: true,
+    })
+  },
+
+  // Categories (includes private skill counts for user)
+  getCategories: () => {
+    return fetchAPI<CategoryListResponse>('/api/v1/categories', {
+      requiresAuth: true,
+    })
+  },
+
+  // Tags (includes private skill counts for user)
+  getTags: (page = 1, limit = 100) => {
+    return fetchAPI<TagListResponse>(
+      `/api/v1/tags?page=${page}&limit=${limit}`,
+      { requiresAuth: true },
+    )
+  },
+
+  // User profile
+  getProfile: () => {
+    return fetchAPI<{ user: { id: string; email: string; name: string } }>(
+      '/api/v1/me',
+      { requiresAuth: true },
+    )
   },
 }

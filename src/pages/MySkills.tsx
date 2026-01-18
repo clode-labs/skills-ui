@@ -1,161 +1,255 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Loader2, Plus, Edit, Eye, Clock } from 'lucide-react'
+import { useSearchParams, Link, useNavigate } from 'react-router-dom'
+import { Loader2, Plus, ChevronLeft, ChevronRight, Lock } from 'lucide-react'
 
-import { api } from '../services/api'
-import type { Skill } from '../types'
+import SkillCard from '../components/SkillCard'
+import { authApi } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
+import type { Skill, PaginationMeta } from '../types'
+
+const ITEMS_PER_PAGE = 20
 
 const MySkills = () => {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [skills, setSkills] = useState<Skill[]>([])
   const [loading, setLoading] = useState(true)
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const navigate = useNavigate()
+
+  const pageFromUrl = parseInt(searchParams.get('page') || '1', 10)
+
+  // Redirect to sign in if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate('/signin', { replace: true })
+    }
+  }, [isAuthenticated, authLoading, navigate])
+
+  // Sync with URL params
+  useEffect(() => {
+    setCurrentPage(pageFromUrl)
+  }, [pageFromUrl])
 
   useEffect(() => {
-    loadMySkills()
-  }, [])
+    if (isAuthenticated) {
+      loadData()
+    }
+  }, [currentPage, isAuthenticated])
 
-  const loadMySkills = async () => {
+  const loadData = async () => {
     try {
       setLoading(true)
-      const response = await api.getMySkills({ limit: 100 })
+      const response = await authApi.getPrivateSkills(
+        currentPage,
+        ITEMS_PER_PAGE,
+      )
       setSkills(response.data)
+      setPagination(response.pagination || null)
     } catch (error) {
-      console.error('Error loading my skills:', error)
+      console.error('Error loading private skills:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const getStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      featured: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      approved: 'bg-green-100 text-green-800 border-green-200',
-      pending: 'bg-blue-100 text-blue-800 border-blue-200',
-      draft: 'bg-gray-100 text-gray-800 border-gray-200',
-      archived: 'bg-red-100 text-red-800 border-red-200',
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage)
+    const params = new URLSearchParams(searchParams)
+    if (newPage === 1) {
+      params.delete('page')
+    } else {
+      params.set('page', newPage.toString())
     }
-    return styles[status] || styles.draft
+    setSearchParams(params)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const totalSkills = pagination?.total_items || skills.length
+  const totalPages = pagination?.total_pages || 1
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = []
+    const maxVisible = 7
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i)
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 5; i++) pages.push(i)
+        pages.push('...')
+        pages.push(totalPages)
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1)
+        pages.push('...')
+        for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i)
+      } else {
+        pages.push(1)
+        pages.push('...')
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i)
+        pages.push('...')
+        pages.push(totalPages)
+      }
+    }
+    return pages
+  }
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="bg-white min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin text-gray-400" size={32} />
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Skills</h1>
-          <p className="text-gray-600">
-            Manage and edit your contributed skills
-          </p>
+    <div className="bg-white min-h-screen">
+      {/* Navigation Tabs */}
+      <div className="border-b border-gray-200 bg-white">
+        <div className="max-w-6xl mx-auto px-4">
+          <nav className="flex items-center gap-6">
+            <Link
+              to="/skills"
+              className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+            >
+              Skills
+            </Link>
+            <Link
+              to="/my-skills"
+              className="py-3 px-1 text-sm font-medium text-gray-900 border-b-2 border-black flex items-center gap-1.5"
+            >
+              <Lock size={14} />
+              My Skills
+            </Link>
+            <Link
+              to="/authors"
+              className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+            >
+              Authors
+            </Link>
+            <Link
+              to="/categories"
+              className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+            >
+              Categories
+            </Link>
+          </nav>
         </div>
-        <Link
-          to="/submit"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
-        >
-          <Plus size={20} />
-          New Skill
-        </Link>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="animate-spin text-red-600" size={40} />
-        </div>
-      ) : skills.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-xl border border-gray-200">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Edit className="text-gray-400" size={32} />
+      {/* Content Section */}
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Lock size={18} className="text-gray-500" />
+              My Private Skills
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              These skills are only visible to you
+            </p>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            No skills yet
-          </h2>
-          <p className="text-gray-600 mb-6">
-            You haven't created any skills. Start by creating your first one!
-          </p>
+
           <Link
-            to="/submit"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+            to="/import"
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 transition-colors"
           >
-            <Plus size={20} />
-            Create Your First Skill
+            <Plus size={16} />
+            Submit Skill
           </Link>
         </div>
-      ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">
-                  Skill
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">
-                  Status
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">
-                  Updated
-                </th>
-                <th className="text-right px-6 py-4 text-sm font-medium text-gray-600">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
+
+        {/* Skills List */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="animate-spin text-gray-400" size={32} />
+          </div>
+        ) : skills.length === 0 ? (
+          <div className="text-center py-20 border border-dashed border-gray-300 rounded-lg">
+            <Lock size={48} className="mx-auto text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No private skills yet
+            </h3>
+            <p className="text-gray-500 mb-4">
+              Submit a skill and mark it as private to see it here
+            </p>
+            <Link
+              to="/import"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-800 transition-colors"
+            >
+              <Plus size={16} />
+              Submit Your First Private Skill
+            </Link>
+          </div>
+        ) : (
+          <>
+            <div className="mb-4 text-sm text-gray-500">
+              {totalSkills} private {totalSkills === 1 ? 'skill' : 'skills'}
+            </div>
+
+            <div className="border-t border-gray-200">
               {skills.map(skill => (
-                <tr
-                  key={skill.id}
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold">
-                          {skill.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900">
-                          {skill.name}
-                        </h3>
-                        <p className="text-sm text-gray-500">{skill.slug}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full border ${getStatusBadge(
-                        skill.status,
-                      )}`}
-                    >
-                      {skill.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Clock size={14} />
-                      {new Date(skill.updated_at).toLocaleDateString()}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-end gap-2">
-                      <Link
-                        to={`/skills/${skill.full_id}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                      >
-                        <Eye size={16} />
-                        View
-                      </Link>
-                      <Link
-                        to={`/my-skills/${skill.full_id}/edit`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Edit size={16} />
-                        Edit
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
+                <SkillCard key={skill.id} skill={skill} />
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-gray-200 pt-6 mt-6">
+                <div className="text-sm text-gray-500">
+                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} -{' '}
+                  {Math.min(currentPage * ITEMS_PER_PAGE, totalSkills)} of{' '}
+                  {totalSkills} skills
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+
+                  {getPageNumbers().map((page, index) =>
+                    page === '...' ? (
+                      <span
+                        key={`ellipsis-${index}`}
+                        className="px-3 py-1 text-gray-400"
+                      >
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page as number)}
+                        className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                          currentPage === page
+                            ? 'bg-black text-white'
+                            : 'hover:bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ),
+                  )}
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }

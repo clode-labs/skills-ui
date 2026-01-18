@@ -4,10 +4,9 @@ import {
   Package,
   Tag,
   Layers,
-  Upload,
   FileDown,
   Settings,
-  FolderEdit,
+  Users,
 } from 'lucide-react'
 
 const Sidebar = () => {
@@ -16,10 +15,9 @@ const Sidebar = () => {
   const menuItems = [
     { icon: Home, label: 'Home', path: '/' },
     { icon: Package, label: 'Skills', path: '/skills' },
-    { icon: FolderEdit, label: 'My Skills', path: '/my-skills' },
+    { icon: Users, label: 'Authors', path: '/authors' },
     { icon: Layers, label: 'Categories', path: '/categories' },
     { icon: Tag, label: 'Tags', path: '/tags' },
-    { icon: Upload, label: 'Submit', path: '/submit' },
     { icon: FileDown, label: 'Import', path: '/import' },
   ]
 
