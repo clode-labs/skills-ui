@@ -1,146 +1,151 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import SkillCard from '../components/SkillCard';
-import { api } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
-import type { Skill, Category, PaginationMeta } from '../types';
-import { Loader2, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
+import { useEffect, useState } from 'react'
+import { useSearchParams, Link } from 'react-router-dom'
+import { Loader2, ChevronLeft, ChevronRight, Lock } from 'lucide-react'
 
-const ITEMS_PER_PAGE = 20;
+import SkillCard from '../components/SkillCard'
+import { api } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
+import type { Skill, Category, PaginationMeta } from '../types'
+
+const ITEMS_PER_PAGE = 20
 
 const Home = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState('all');
-  const [pagination, setPagination] = useState<PaginationMeta | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const { isAuthenticated } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [skills, setSkills] = useState<Skill[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
+  const [activeFilter, setActiveFilter] = useState('all')
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const { isAuthenticated } = useAuth()
 
-  const searchQuery = searchParams.get('search') || '';
-  const categoryFromUrl = searchParams.get('category') || '';
-  const pageFromUrl = parseInt(searchParams.get('page') || '1', 10);
-  const [selectedCategory, setSelectedCategory] = useState(categoryFromUrl);
+  const searchQuery = searchParams.get('search') || ''
+  const categoryFromUrl = searchParams.get('category') || ''
+  const pageFromUrl = parseInt(searchParams.get('page') || '1', 10)
+  const [selectedCategory, setSelectedCategory] = useState(categoryFromUrl)
 
   // Sync with URL params
   useEffect(() => {
-    setSelectedCategory(categoryFromUrl);
-    setCurrentPage(pageFromUrl);
-  }, [categoryFromUrl, pageFromUrl]);
+    setSelectedCategory(categoryFromUrl)
+    setCurrentPage(pageFromUrl)
+  }, [categoryFromUrl, pageFromUrl])
 
   useEffect(() => {
-    loadData();
-  }, [searchQuery, activeFilter, selectedCategory, currentPage]);
+    loadData()
+  }, [searchQuery, activeFilter, selectedCategory, currentPage])
 
   const loadData = async () => {
     try {
-      setLoading(true);
+      setLoading(true)
 
       // Load categories
-      const categoriesResponse = await api.getCategories();
-      setCategories(categoriesResponse.data);
+      const categoriesResponse = await api.getCategories()
+      setCategories(categoriesResponse.data)
 
       // Load skills based on filters
-      let skillsResponse;
+      let skillsResponse
       if (searchQuery) {
-        skillsResponse = await api.searchSkills(searchQuery, currentPage, ITEMS_PER_PAGE);
+        skillsResponse = await api.searchSkills(
+          searchQuery,
+          currentPage,
+          ITEMS_PER_PAGE,
+        )
       } else if (activeFilter === 'featured') {
-        skillsResponse = await api.getFeaturedSkills();
+        skillsResponse = await api.getFeaturedSkills()
       } else {
         const params: Record<string, string> = {
           page: currentPage.toString(),
           limit: ITEMS_PER_PAGE.toString(),
-        };
+        }
         if (activeFilter !== 'all') {
-          params.status = activeFilter;
+          params.status = activeFilter
         }
         if (selectedCategory) {
-          params.category = selectedCategory;
+          params.category = selectedCategory
         }
-        skillsResponse = await api.getSkills(params);
+        skillsResponse = await api.getSkills(params)
       }
 
-      setSkills(skillsResponse.data);
-      setPagination(skillsResponse.pagination || null);
+      setSkills(skillsResponse.data)
+      setPagination(skillsResponse.pagination || null)
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('Error loading data:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
+    setCurrentPage(newPage)
     // Update URL with page param
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams)
     if (newPage === 1) {
-      params.delete('page');
+      params.delete('page')
     } else {
-      params.set('page', newPage.toString());
+      params.set('page', newPage.toString())
     }
-    setSearchParams(params);
+    setSearchParams(params)
     // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const handleFilterChange = (filter: string) => {
-    setActiveFilter(filter);
-    setCurrentPage(1);
-    const params = new URLSearchParams(searchParams);
-    params.delete('page');
-    setSearchParams(params);
-  };
+    setActiveFilter(filter)
+    setCurrentPage(1)
+    const params = new URLSearchParams(searchParams)
+    params.delete('page')
+    setSearchParams(params)
+  }
 
   const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
-    setActiveFilter('all');
-    setCurrentPage(1);
-    const params = new URLSearchParams(searchParams);
-    params.delete('page');
+    setSelectedCategory(category)
+    setActiveFilter('all')
+    setCurrentPage(1)
+    const params = new URLSearchParams(searchParams)
+    params.delete('page')
     if (category) {
-      params.set('category', category);
+      params.set('category', category)
     } else {
-      params.delete('category');
+      params.delete('category')
     }
-    setSearchParams(params);
-  };
+    setSearchParams(params)
+  }
 
   const filters = [
     { id: 'all', label: 'All' },
     { id: 'featured', label: 'Featured' },
     { id: 'approved', label: 'Latest' },
-  ];
+  ]
 
-  const totalSkills = pagination?.total_items || skills.length;
-  const totalPages = pagination?.total_pages || 1;
+  const totalSkills = pagination?.total_items || skills.length
+  const totalPages = pagination?.total_pages || 1
 
   // Generate page numbers to display
   const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    const maxVisible = 7;
+    const pages: (number | string)[] = []
+    const maxVisible = 7
 
     if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
+      for (let i = 1; i <= totalPages; i++) pages.push(i)
     } else {
       if (currentPage <= 3) {
-        for (let i = 1; i <= 5; i++) pages.push(i);
-        pages.push('...');
-        pages.push(totalPages);
+        for (let i = 1; i <= 5; i++) pages.push(i)
+        pages.push('...')
+        pages.push(totalPages)
       } else if (currentPage >= totalPages - 2) {
-        pages.push(1);
-        pages.push('...');
-        for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+        pages.push(1)
+        pages.push('...')
+        for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i)
       } else {
-        pages.push(1);
-        pages.push('...');
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
-        pages.push('...');
-        pages.push(totalPages);
+        pages.push(1)
+        pages.push('...')
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i)
+        pages.push('...')
+        pages.push(totalPages)
       }
     }
-    return pages;
-  };
+    return pages
+  }
 
   return (
     <div className="bg-slate-50 min-h-screen">
@@ -148,19 +153,31 @@ const Home = () => {
       <div className="border-b border-slate-200 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <nav className="flex items-center gap-1">
-            <Link to="/skills" className="px-4 py-3 text-[13px] font-semibold text-slate-900 border-b-2 border-slate-900 -mb-px">
+            <Link
+              to="/skills"
+              className="px-4 py-3 text-[13px] font-semibold text-slate-900 border-b-2 border-slate-900 -mb-px"
+            >
               Skills
             </Link>
             {isAuthenticated && (
-              <Link to="/my-skills" className="px-4 py-3 text-[13px] font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent hover:border-slate-300 -mb-px flex items-center gap-1.5 transition-colors">
+              <Link
+                to="/my-skills"
+                className="px-4 py-3 text-[13px] font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent hover:border-slate-300 -mb-px flex items-center gap-1.5 transition-colors"
+              >
                 <Lock size={13} />
                 My Skills
               </Link>
             )}
-            <Link to="/authors" className="px-4 py-3 text-[13px] font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent hover:border-slate-300 -mb-px transition-colors">
+            <Link
+              to="/authors"
+              className="px-4 py-3 text-[13px] font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent hover:border-slate-300 -mb-px transition-colors"
+            >
               Authors
             </Link>
-            <Link to="/categories" className="px-4 py-3 text-[13px] font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent hover:border-slate-300 -mb-px transition-colors">
+            <Link
+              to="/categories"
+              className="px-4 py-3 text-[13px] font-medium text-slate-500 hover:text-slate-800 border-b-2 border-transparent hover:border-slate-300 -mb-px transition-colors"
+            >
               Categories
             </Link>
           </nav>
@@ -174,7 +191,8 @@ const Home = () => {
           <h2 className="text-[15px] font-semibold text-slate-800">
             {searchQuery ? (
               <>
-                {totalSkills} {totalSkills === 1 ? 'skill' : 'skills'} found for "{searchQuery}"
+                {totalSkills} {totalSkills === 1 ? 'skill' : 'skills'} found for
+                "{searchQuery}"
               </>
             ) : activeFilter === 'featured' ? (
               'Featured Skills'
@@ -189,10 +207,10 @@ const Home = () => {
             {/* Sort/Filter */}
             <select
               value={activeFilter}
-              onChange={(e) => handleFilterChange(e.target.value)}
+              onChange={e => handleFilterChange(e.target.value)}
               className="text-[13px] px-3 py-2 border border-slate-200 rounded-lg text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 focus:border-slate-300 transition-all cursor-pointer"
             >
-              {filters.map((filter) => (
+              {filters.map(filter => (
                 <option key={filter.id} value={filter.id}>
                   {filter.label}
                 </option>
@@ -201,11 +219,11 @@ const Home = () => {
 
             <select
               value={selectedCategory}
-              onChange={(e) => handleCategoryChange(e.target.value)}
+              onChange={e => handleCategoryChange(e.target.value)}
               className="text-[13px] px-3 py-2 border border-slate-200 rounded-lg text-slate-600 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 focus:border-slate-300 transition-all cursor-pointer"
             >
               <option value="">All Categories</option>
-              {categories.map((category) => (
+              {categories.map(category => (
                 <option key={category.id} value={category.name}>
                   {category.name}
                 </option>
@@ -226,7 +244,7 @@ const Home = () => {
         ) : (
           <>
             <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm shadow-slate-100 overflow-hidden">
-              {skills.map((skill) => (
+              {skills.map(skill => (
                 <SkillCard key={skill.id} skill={skill} />
               ))}
             </div>
@@ -235,7 +253,9 @@ const Home = () => {
             {totalPages > 1 && (
               <div className="flex items-center justify-between pt-6 mt-2">
                 <div className="text-[12px] text-slate-400">
-                  Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, totalSkills)} of {totalSkills}
+                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
+                  {Math.min(currentPage * ITEMS_PER_PAGE, totalSkills)} of{' '}
+                  {totalSkills}
                 </div>
 
                 <div className="flex items-center gap-0.5">
@@ -249,9 +269,14 @@ const Home = () => {
                   </button>
 
                   {/* Page Numbers */}
-                  {getPageNumbers().map((page, index) => (
+                  {getPageNumbers().map((page, index) =>
                     page === '...' ? (
-                      <span key={`ellipsis-${index}`} className="px-2 py-1 text-slate-300 text-[13px]">…</span>
+                      <span
+                        key={`ellipsis-${index}`}
+                        className="px-2 py-1 text-slate-300 text-[13px]"
+                      >
+                        …
+                      </span>
                     ) : (
                       <button
                         key={page}
@@ -264,8 +289,8 @@ const Home = () => {
                       >
                         {page}
                       </button>
-                    )
-                  ))}
+                    ),
+                  )}
 
                   {/* Next Button */}
                   <button
@@ -282,7 +307,7 @@ const Home = () => {
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Home;
+export default Home

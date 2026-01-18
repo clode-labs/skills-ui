@@ -1,28 +1,29 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { api } from '../services/api';
-import type { Category } from '../types';
-import { Loader2, FolderOpen } from 'lucide-react';
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Loader2, FolderOpen } from 'lucide-react'
+
+import { api } from '../services/api'
+import type { Category } from '../types'
 
 const Categories = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadCategories();
-  }, []);
+    loadCategories()
+  }, [])
 
   const loadCategories = async () => {
     try {
-      setLoading(true);
-      const response = await api.getCategories();
-      setCategories(response.data);
+      setLoading(true)
+      const response = await api.getCategories()
+      setCategories(response.data)
     } catch (error) {
-      console.error('Error loading categories:', error);
+      console.error('Error loading categories:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="bg-white min-h-screen">
@@ -30,13 +31,22 @@ const Categories = () => {
       <div className="border-b border-gray-200 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <nav className="flex items-center gap-6">
-            <Link to="/skills" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+            <Link
+              to="/skills"
+              className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+            >
               Skills
             </Link>
-            <Link to="/authors" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+            <Link
+              to="/authors"
+              className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+            >
               Authors
             </Link>
-            <Link to="/categories" className="py-3 px-1 text-sm font-medium text-gray-900 border-b-2 border-black">
+            <Link
+              to="/categories"
+              className="py-3 px-1 text-sm font-medium text-gray-900 border-b-2 border-black"
+            >
               Categories
             </Link>
           </nav>
@@ -63,7 +73,7 @@ const Categories = () => {
           </div>
         ) : (
           <div className="border-t border-gray-200">
-            {categories.map((category) => (
+            {categories.map(category => (
               <Link
                 key={category.id}
                 to={`/skills?category=${encodeURIComponent(category.name)}`}
@@ -81,7 +91,10 @@ const Categories = () => {
                       {category.name}
                     </h3>
                     <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                      <span>{category.skill_count || 0} skill{category.skill_count !== 1 ? 's' : ''}</span>
+                      <span>
+                        {category.skill_count || 0} skill
+                        {category.skill_count !== 1 ? 's' : ''}
+                      </span>
                     </div>
                   </div>
 
@@ -96,7 +109,7 @@ const Categories = () => {
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Categories;
+export default Categories

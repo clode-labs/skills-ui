@@ -1,6 +1,7 @@
 import type { Credentials, User } from '../types/auth'
 
-const AUTH_URL = import.meta.env.VITE_AUTH_URL || 'https://auth.clode.space/auth'
+const AUTH_URL =
+  import.meta.env.VITE_AUTH_URL || 'https://auth.clode.space/auth'
 const WEBAPP_URL = import.meta.env.VITE_WEBAPP_URL || 'https://app.clode.space'
 
 // Storage keys
@@ -40,7 +41,7 @@ export function buildLoginUrl(callbackUrl: string, isSignUp = false): string {
  */
 export async function exchangeCodeForTokens(
   sessionId: string,
-  sessionCode: string
+  sessionCode: string,
 ): Promise<Credentials> {
   const response = await fetch(`${AUTH_URL}/cli/sessions/exchange`, {
     method: 'POST',
@@ -73,7 +74,9 @@ export async function exchangeCodeForTokens(
 /**
  * Refresh the access token using refresh token
  */
-export async function refreshAccessToken(refreshToken: string): Promise<Credentials | null> {
+export async function refreshAccessToken(
+  refreshToken: string,
+): Promise<Credentials | null> {
   try {
     const response = await fetch(`${AUTH_URL}/refresh-token`, {
       method: 'POST',
@@ -108,17 +111,20 @@ export async function refreshAccessToken(refreshToken: string): Promise<Credenti
 /**
  * Revoke tokens (logout)
  */
-export async function revokeTokens(accessToken: string, refreshToken: string): Promise<void> {
+export async function revokeTokens(
+  accessToken: string,
+  refreshToken: string,
+): Promise<void> {
   try {
     await fetch(`${AUTH_URL}/revoke-token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
         token: accessToken,
-        refresh_token: refreshToken
+        refresh_token: refreshToken,
       }),
     })
   } catch {

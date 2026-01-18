@@ -1,30 +1,31 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { api } from '../services/api';
-import type { Author, PaginationMeta } from '../types';
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { Loader2 } from 'lucide-react'
+
+import { api } from '../services/api'
+import type { Author, PaginationMeta } from '../types'
 
 export default function Authors() {
-  const [authors, setAuthors] = useState<Author[]>([]);
-  const [pagination, setPagination] = useState<PaginationMeta | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
+  const [authors, setAuthors] = useState<Author[]>([])
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     const fetchAuthors = async () => {
-      setLoading(true);
+      setLoading(true)
       try {
-        const response = await api.getAuthors(page, 24);
-        setAuthors(response.data);
-        setPagination(response.pagination);
+        const response = await api.getAuthors(page, 24)
+        setAuthors(response.data)
+        setPagination(response.pagination)
       } catch (error) {
-        console.error('Failed to fetch authors:', error);
+        console.error('Failed to fetch authors:', error)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-    fetchAuthors();
-  }, [page]);
+    }
+    fetchAuthors()
+  }, [page])
 
   return (
     <div className="bg-white min-h-screen">
@@ -32,13 +33,22 @@ export default function Authors() {
       <div className="border-b border-gray-200 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <nav className="flex items-center gap-6">
-            <Link to="/skills" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+            <Link
+              to="/skills"
+              className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+            >
               Skills
             </Link>
-            <Link to="/authors" className="py-3 px-1 text-sm font-medium text-gray-900 border-b-2 border-black">
+            <Link
+              to="/authors"
+              className="py-3 px-1 text-sm font-medium text-gray-900 border-b-2 border-black"
+            >
               Authors
             </Link>
-            <Link to="/categories" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+            <Link
+              to="/categories"
+              className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+            >
               Categories
             </Link>
           </nav>
@@ -65,7 +75,7 @@ export default function Authors() {
           </div>
         ) : (
           <div className="border-t border-gray-200">
-            {authors.map((author) => (
+            {authors.map(author => (
               <Link
                 key={author.slug}
                 to={`/authors/${author.slug}`}
@@ -91,9 +101,14 @@ export default function Authors() {
                       {author.name || author.slug}
                     </h3>
                     <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                      <span>{author.skill_count} skill{author.skill_count !== 1 ? 's' : ''}</span>
+                      <span>
+                        {author.skill_count} skill
+                        {author.skill_count !== 1 ? 's' : ''}
+                      </span>
                       {author.url && (
-                        <span className="text-gray-400">{author.url.replace('https://', '')}</span>
+                        <span className="text-gray-400">
+                          {author.url.replace('https://', '')}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -117,7 +132,9 @@ export default function Authors() {
               Page {page} of {pagination.total_pages}
             </span>
             <button
-              onClick={() => setPage(p => Math.min(pagination.total_pages, p + 1))}
+              onClick={() =>
+                setPage(p => Math.min(pagination.total_pages, p + 1))
+              }
               disabled={page === pagination.total_pages}
               className="px-4 py-2 border border-gray-300 rounded text-sm disabled:opacity-50 hover:bg-gray-50"
             >
@@ -127,5 +144,5 @@ export default function Authors() {
         )}
       </div>
     </div>
-  );
+  )
 }

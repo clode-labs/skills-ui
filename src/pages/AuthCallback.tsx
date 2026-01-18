@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+
 import { useAuth } from '../contexts/AuthContext'
 import * as authService from '../services/auth'
 
@@ -28,13 +29,20 @@ export default function AuthCallback() {
 
       try {
         // Exchange code for tokens
-        const credentials = await authService.exchangeCodeForTokens(sessionId, sessionCode)
+        const credentials = await authService.exchangeCodeForTokens(
+          sessionId,
+          sessionCode,
+        )
 
         // Clear the stored session ID
         sessionStorage.removeItem('auth_session_id')
 
         // Update auth context
-        setCredentials(credentials.user, credentials.accessToken, credentials.refreshToken)
+        setCredentials(
+          credentials.user,
+          credentials.accessToken,
+          credentials.refreshToken,
+        )
 
         // Redirect to home
         navigate('/', { replace: true })
@@ -52,7 +60,9 @@ export default function AuthCallback() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center max-w-md p-6">
           <div className="text-red-500 text-5xl mb-4">!</div>
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">Authentication Failed</h1>
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">
+            Authentication Failed
+          </h1>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={() => navigate('/signin')}

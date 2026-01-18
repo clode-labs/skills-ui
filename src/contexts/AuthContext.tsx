@@ -1,4 +1,13 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  type ReactNode,
+} from 'react'
+
 import type { AuthContextType, AuthState, User } from '../types/auth'
 import * as authService from '../services/auth'
 
@@ -23,22 +32,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Check if access token is expired
       if (authService.isTokenExpired(credentials.accessToken)) {
         // Try to refresh
-        authService.refreshAccessToken(credentials.refreshToken).then((newCreds) => {
-          if (newCreds) {
-            authService.saveCredentials(newCreds)
-            setState({
-              user: newCreds.user,
-              accessToken: newCreds.accessToken,
-              refreshToken: newCreds.refreshToken,
-              isAuthenticated: true,
-              isLoading: false,
-            })
-          } else {
-            // Refresh failed, clear credentials
-            authService.clearCredentials()
-            setState({ ...initialState, isLoading: false })
-          }
-        })
+        authService
+          .refreshAccessToken(credentials.refreshToken)
+          .then(newCreds => {
+            if (newCreds) {
+              authService.saveCredentials(newCreds)
+              setState({
+                user: newCreds.user,
+                accessToken: newCreds.accessToken,
+                refreshToken: newCreds.refreshToken,
+                isAuthenticated: true,
+                isLoading: false,
+              })
+            } else {
+              // Refresh failed, clear credentials
+              authService.clearCredentials()
+              setState({ ...initialState, isLoading: false })
+            }
+          })
       } else {
         setState({
           user: credentials.user,
@@ -95,31 +106,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [state.refreshToken])
 
   // Function to set credentials after callback
-  const setCredentials = useCallback((user: User, accessToken: string, refreshToken: string) => {
-    authService.saveCredentials({ user, accessToken, refreshToken })
-    setState({
-      user,
-      accessToken,
-      refreshToken,
-      isAuthenticated: true,
-      isLoading: false,
-    })
-  }, [])
-
-  const value = useMemo<AuthContextType>(() => ({
-    ...state,
-    signIn,
-    signUp,
-    signOut,
-    refreshAccessToken,
-    setCredentials,
-  }), [state, signIn, signUp, signOut, refreshAccessToken, setCredentials])
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+  const setCredentials = useCallback(
+    (user: User, accessToken: string, refreshToken: string) => {
+      authService.saveCredentials({ user, accessToken, refreshToken })
+      setState({
+        user,
+        accessToken,
+        refreshToken,
+        isAuthenticated: true,
+        isLoading: false,
+      })
+    },
+    [],
   )
+
+  const value = useMemo<AuthContextType>(
+    () => ({
+      ...state,
+      signIn,
+      signUp,
+      signOut,
+      refreshAccessToken,
+      setCredentials,
+    }),
+    [state, signIn, signUp, signOut, refreshAccessToken, setCredentials],
+  )
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

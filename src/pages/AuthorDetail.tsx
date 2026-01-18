@@ -1,39 +1,40 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ExternalLink } from 'lucide-react';
-import { Loader2 } from 'lucide-react';
-import { api } from '../services/api';
-import type { Author, Skill, PaginationMeta } from '../types';
-import SkillCard from '../components/SkillCard';
+import { useState, useEffect } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import { ExternalLink } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
+
+import { api } from '../services/api'
+import type { Author, Skill, PaginationMeta } from '../types'
+import SkillCard from '../components/SkillCard'
 
 export default function AuthorDetail() {
-  const { slug } = useParams<{ slug: string }>();
-  const [author, setAuthor] = useState<Author | null>(null);
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [pagination, setPagination] = useState<PaginationMeta | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
+  const { slug } = useParams<{ slug: string }>()
+  const [author, setAuthor] = useState<Author | null>(null)
+  const [skills, setSkills] = useState<Skill[]>([])
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     const fetchAuthor = async () => {
-      if (!slug) return;
-      setLoading(true);
+      if (!slug) return
+      setLoading(true)
       try {
         const [authorRes, skillsRes] = await Promise.all([
           api.getAuthor(slug),
           api.getAuthorSkills(slug, page, 20),
-        ]);
-        setAuthor(authorRes.data);
-        setSkills(skillsRes.data);
-        setPagination(skillsRes.pagination);
+        ])
+        setAuthor(authorRes.data)
+        setSkills(skillsRes.data)
+        setPagination(skillsRes.pagination)
       } catch (error) {
-        console.error('Failed to fetch author:', error);
+        console.error('Failed to fetch author:', error)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-    fetchAuthor();
-  }, [slug, page]);
+    }
+    fetchAuthor()
+  }, [slug, page])
 
   if (loading) {
     return (
@@ -41,13 +42,22 @@ export default function AuthorDetail() {
         <div className="border-b border-gray-200 bg-white">
           <div className="max-w-6xl mx-auto px-4">
             <nav className="flex items-center gap-6">
-              <Link to="/skills" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+              <Link
+                to="/skills"
+                className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+              >
                 Skills
               </Link>
-              <Link to="/authors" className="py-3 px-1 text-sm font-medium text-gray-900 border-b-2 border-black">
+              <Link
+                to="/authors"
+                className="py-3 px-1 text-sm font-medium text-gray-900 border-b-2 border-black"
+              >
                 Authors
               </Link>
-              <Link to="/categories" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+              <Link
+                to="/categories"
+                className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+              >
                 Categories
               </Link>
             </nav>
@@ -57,7 +67,7 @@ export default function AuthorDetail() {
           <Loader2 className="animate-spin text-gray-400" size={32} />
         </div>
       </div>
-    );
+    )
   }
 
   if (!author) {
@@ -66,13 +76,22 @@ export default function AuthorDetail() {
         <div className="border-b border-gray-200 bg-white">
           <div className="max-w-6xl mx-auto px-4">
             <nav className="flex items-center gap-6">
-              <Link to="/skills" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+              <Link
+                to="/skills"
+                className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+              >
                 Skills
               </Link>
-              <Link to="/authors" className="py-3 px-1 text-sm font-medium text-gray-900 border-b-2 border-black">
+              <Link
+                to="/authors"
+                className="py-3 px-1 text-sm font-medium text-gray-900 border-b-2 border-black"
+              >
                 Authors
               </Link>
-              <Link to="/categories" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+              <Link
+                to="/categories"
+                className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+              >
                 Categories
               </Link>
             </nav>
@@ -82,7 +101,7 @@ export default function AuthorDetail() {
           <p className="text-gray-500">Author not found</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -91,13 +110,22 @@ export default function AuthorDetail() {
       <div className="border-b border-gray-200 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <nav className="flex items-center gap-6">
-            <Link to="/skills" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+            <Link
+              to="/skills"
+              className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+            >
               Skills
             </Link>
-            <Link to="/authors" className="py-3 px-1 text-sm font-medium text-gray-900 border-b-2 border-black">
+            <Link
+              to="/authors"
+              className="py-3 px-1 text-sm font-medium text-gray-900 border-b-2 border-black"
+            >
               Authors
             </Link>
-            <Link to="/categories" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+            <Link
+              to="/categories"
+              className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+            >
               Categories
             </Link>
           </nav>
@@ -120,7 +148,9 @@ export default function AuthorDetail() {
             </div>
           )}
           <div>
-            <h1 className="text-xl font-bold text-gray-900">{author.name || author.slug}</h1>
+            <h1 className="text-xl font-bold text-gray-900">
+              {author.name || author.slug}
+            </h1>
             {author.url && (
               <a
                 href={author.url}
@@ -133,7 +163,8 @@ export default function AuthorDetail() {
               </a>
             )}
             <p className="text-sm text-gray-500 mt-1">
-              {author.skill_count} skill{author.skill_count !== 1 ? 's' : ''} published
+              {author.skill_count} skill{author.skill_count !== 1 ? 's' : ''}{' '}
+              published
             </p>
           </div>
         </div>
@@ -141,7 +172,8 @@ export default function AuthorDetail() {
         {/* Skills Header */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">
-            {skills.length} skill{skills.length !== 1 ? 's' : ''} by {author.name || author.slug}
+            {skills.length} skill{skills.length !== 1 ? 's' : ''} by{' '}
+            {author.name || author.slug}
           </h2>
         </div>
 
@@ -152,7 +184,7 @@ export default function AuthorDetail() {
           </div>
         ) : (
           <div className="border-t border-gray-200">
-            {skills.map((skill) => (
+            {skills.map(skill => (
               <SkillCard key={skill.id} skill={skill} />
             ))}
           </div>
@@ -172,7 +204,9 @@ export default function AuthorDetail() {
               Page {page} of {pagination.total_pages}
             </span>
             <button
-              onClick={() => setPage(p => Math.min(pagination.total_pages, p + 1))}
+              onClick={() =>
+                setPage(p => Math.min(pagination.total_pages, p + 1))
+              }
               disabled={page === pagination.total_pages}
               className="px-4 py-2 border border-gray-300 rounded text-sm disabled:opacity-50 hover:bg-gray-50"
             >
@@ -182,5 +216,5 @@ export default function AuthorDetail() {
         )}
       </div>
     </div>
-  );
+  )
 }

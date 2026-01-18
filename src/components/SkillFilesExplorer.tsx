@@ -1,34 +1,35 @@
-import { useState, useEffect } from 'react';
-import { ChevronRight, ChevronDown, File, Folder } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import { api } from '../services/api';
-import type { FileNode } from '../types';
+import { useState, useEffect } from 'react'
+import { ChevronRight, ChevronDown, File, Folder } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+
+import { api } from '../services/api'
+import type { FileNode } from '../types'
 
 interface SkillFilesExplorerProps {
-  skillId: string;
-  skillName: string;
-  skillDescription?: string;
+  skillId: string
+  skillName: string
+  skillDescription?: string
 }
 
 interface TreeNodeProps {
-  node: FileNode;
-  onSelect: (node: FileNode) => void;
-  selectedPath: string | null;
-  depth?: number;
+  node: FileNode
+  onSelect: (node: FileNode) => void
+  selectedPath: string | null
+  depth?: number
 }
 
 function TreeNode({ node, onSelect, selectedPath, depth = 0 }: TreeNodeProps) {
-  const [expanded, setExpanded] = useState(depth < 2);
-  const isSelected = selectedPath === node.path;
-  const isDir = node.type === 'dir';
+  const [expanded, setExpanded] = useState(depth < 2)
+  const isSelected = selectedPath === node.path
+  const isDir = node.type === 'dir'
 
   const handleClick = () => {
     if (isDir) {
-      setExpanded(!expanded);
+      setExpanded(!expanded)
     } else {
-      onSelect(node);
+      onSelect(node)
     }
-  };
+  }
 
   return (
     <div>
@@ -59,7 +60,7 @@ function TreeNode({ node, onSelect, selectedPath, depth = 0 }: TreeNodeProps) {
 
       {isDir && expanded && node.children && (
         <div>
-          {node.children.map((child) => (
+          {node.children.map(child => (
             <TreeNode
               key={child.path}
               node={child}
@@ -71,98 +72,102 @@ function TreeNode({ node, onSelect, selectedPath, depth = 0 }: TreeNodeProps) {
         </div>
       )}
     </div>
-  );
+  )
 }
 
-export default function SkillFilesExplorer({ skillId, skillName, skillDescription }: SkillFilesExplorerProps) {
-  const [tree, setTree] = useState<FileNode | null>(null);
-  const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
-  const [fileContent, setFileContent] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [contentLoading, setContentLoading] = useState(false);
+export default function SkillFilesExplorer({
+  skillId,
+  skillName,
+  skillDescription,
+}: SkillFilesExplorerProps) {
+  const [tree, setTree] = useState<FileNode | null>(null)
+  const [selectedFile, setSelectedFile] = useState<FileNode | null>(null)
+  const [fileContent, setFileContent] = useState<string>('')
+  const [loading, setLoading] = useState(true)
+  const [contentLoading, setContentLoading] = useState(false)
 
   useEffect(() => {
     const fetchTree = async () => {
       try {
-        const response = await api.getSkillTree(skillId);
-        setTree(response.data);
+        const response = await api.getSkillTree(skillId)
+        setTree(response.data)
 
         // Auto-select SKILL.md if present
-        const skillMd = findFile(response.data, 'SKILL.md');
+        const skillMd = findFile(response.data, 'SKILL.md')
         if (skillMd) {
-          handleFileSelect(skillMd);
+          handleFileSelect(skillMd)
         }
       } catch (error) {
-        console.error('Failed to fetch file tree:', error);
+        console.error('Failed to fetch file tree:', error)
       } finally {
-        setLoading(false);
-      }
-    };
-    fetchTree();
-  }, [skillId]);
-
-  const findFile = (node: FileNode, name: string): FileNode | null => {
-    if (node.name === name && node.type === 'file') return node;
-    if (node.children) {
-      for (const child of node.children) {
-        const found = findFile(child, name);
-        if (found) return found;
+        setLoading(false)
       }
     }
-    return null;
-  };
+    fetchTree()
+  }, [skillId])
+
+  const findFile = (node: FileNode, name: string): FileNode | null => {
+    if (node.name === name && node.type === 'file') return node
+    if (node.children) {
+      for (const child of node.children) {
+        const found = findFile(child, name)
+        if (found) return found
+      }
+    }
+    return null
+  }
 
   const handleFileSelect = async (node: FileNode) => {
-    setSelectedFile(node);
-    setContentLoading(true);
+    setSelectedFile(node)
+    setContentLoading(true)
     try {
       // Get the relative path from the skill root
       // tree.path is the skill root (e.g., "skills/ansible")
       // node.path is the full path (e.g., "skills/ansible/SKILL.md")
       // We need to extract just "SKILL.md" (relative to skill root)
-      let relativePath = node.path;
+      let relativePath = node.path
 
       if (tree) {
-        const treePath = tree.path || '';
-        const nodePath = node.path || '';
+        const treePath = tree.path || ''
+        const nodePath = node.path || ''
 
         // Strip the tree root path prefix if present
         if (treePath && nodePath.startsWith(treePath + '/')) {
-          relativePath = nodePath.slice(treePath.length + 1);
+          relativePath = nodePath.slice(treePath.length + 1)
         } else if (treePath && nodePath.startsWith(treePath)) {
           // Handle case where node.path equals tree.path (root directory selected)
-          relativePath = nodePath.slice(treePath.length).replace(/^\//, '');
+          relativePath = nodePath.slice(treePath.length).replace(/^\//, '')
         } else if (treePath && nodePath.includes('/')) {
           // Fallback: if paths don't match but node has directory prefix,
           // try to extract just the filename portion after the tree's directory name
-          const treeDir = treePath.split('/').pop() || '';
-          const nodePathParts = nodePath.split('/');
-          const treeDirIndex = nodePathParts.indexOf(treeDir);
+          const treeDir = treePath.split('/').pop() || ''
+          const nodePathParts = nodePath.split('/')
+          const treeDirIndex = nodePathParts.indexOf(treeDir)
           if (treeDirIndex >= 0) {
-            relativePath = nodePathParts.slice(treeDirIndex + 1).join('/');
+            relativePath = nodePathParts.slice(treeDirIndex + 1).join('/')
           }
         }
       }
 
       // Ensure we don't send empty path
       if (!relativePath && node.name) {
-        relativePath = node.name;
+        relativePath = node.name
       }
 
-      const response = await api.getSkillFile(skillId, relativePath);
-      setFileContent(response.content);
+      const response = await api.getSkillFile(skillId, relativePath)
+      setFileContent(response.content)
     } catch (error) {
-      console.error('Failed to load file:', error);
-      setFileContent('Failed to load file content');
+      console.error('Failed to load file:', error)
+      setFileContent('Failed to load file content')
     } finally {
-      setContentLoading(false);
+      setContentLoading(false)
     }
-  };
+  }
 
-  const isMarkdown = selectedFile?.name.endsWith('.md');
+  const isMarkdown = selectedFile?.name.endsWith('.md')
 
   if (loading) {
-    return <div className="p-4 text-gray-500">Loading files...</div>;
+    return <div className="p-4 text-gray-500">Loading files...</div>
   }
 
   return (
@@ -181,7 +186,10 @@ export default function SkillFilesExplorer({ skillId, skillName, skillDescriptio
       </div>
 
       {/* Content Panel */}
-      <div className="flex-1 overflow-y-auto bg-white" style={{ minHeight: '600px' }}>
+      <div
+        className="flex-1 overflow-y-auto bg-white"
+        style={{ minHeight: '600px' }}
+      >
         {contentLoading ? (
           <div className="p-8 text-gray-500">Loading...</div>
         ) : selectedFile ? (
@@ -198,12 +206,18 @@ export default function SkillFilesExplorer({ skillId, skillName, skillDescriptio
                 <div className="space-y-3">
                   <div className="flex">
                     <span className="text-sm text-gray-500 w-24">Name:</span>
-                    <span className="text-sm font-semibold text-gray-900">{skillName}</span>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {skillName}
+                    </span>
                   </div>
                   {skillDescription && (
                     <div className="flex">
-                      <span className="text-sm text-gray-500 w-24 flex-shrink-0">Description:</span>
-                      <span className="text-sm text-gray-700">{skillDescription}</span>
+                      <span className="text-sm text-gray-500 w-24 flex-shrink-0">
+                        Description:
+                      </span>
+                      <span className="text-sm text-gray-700">
+                        {skillDescription}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -212,7 +226,9 @@ export default function SkillFilesExplorer({ skillId, skillName, skillDescriptio
 
             {/* Non-SKILL.md file path */}
             {selectedFile.name !== 'SKILL.md' && (
-              <div className="font-mono text-xs text-gray-400 mb-6">{selectedFile.path}</div>
+              <div className="font-mono text-xs text-gray-400 mb-6">
+                {selectedFile.path}
+              </div>
             )}
 
             {/* File Content */}
@@ -221,43 +237,59 @@ export default function SkillFilesExplorer({ skillId, skillName, skillDescriptio
                 <ReactMarkdown
                   components={{
                     h1: ({ children }) => (
-                      <h1 className="text-2xl font-bold text-gray-900 mt-8 mb-4 first:mt-0">{children}</h1>
+                      <h1 className="text-2xl font-bold text-gray-900 mt-8 mb-4 first:mt-0">
+                        {children}
+                      </h1>
                     ),
                     h2: ({ children }) => (
-                      <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3 pb-2 border-b border-gray-200">{children}</h2>
+                      <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3 pb-2 border-b border-gray-200">
+                        {children}
+                      </h2>
                     ),
                     h3: ({ children }) => (
-                      <h3 className="text-lg font-semibold text-gray-800 mt-6 mb-2">{children}</h3>
+                      <h3 className="text-lg font-semibold text-gray-800 mt-6 mb-2">
+                        {children}
+                      </h3>
                     ),
                     h4: ({ children }) => (
-                      <h4 className="text-base font-semibold text-gray-800 mt-4 mb-2">{children}</h4>
+                      <h4 className="text-base font-semibold text-gray-800 mt-4 mb-2">
+                        {children}
+                      </h4>
                     ),
                     p: ({ children }) => (
-                      <p className="text-base text-gray-700 leading-relaxed mb-4">{children}</p>
+                      <p className="text-base text-gray-700 leading-relaxed mb-4">
+                        {children}
+                      </p>
                     ),
                     ul: ({ children }) => (
-                      <ul className="list-disc list-outside ml-6 mb-4 space-y-2">{children}</ul>
+                      <ul className="list-disc list-outside ml-6 mb-4 space-y-2">
+                        {children}
+                      </ul>
                     ),
                     ol: ({ children }) => (
-                      <ol className="list-decimal list-outside ml-6 mb-4 space-y-2">{children}</ol>
+                      <ol className="list-decimal list-outside ml-6 mb-4 space-y-2">
+                        {children}
+                      </ol>
                     ),
                     li: ({ children }) => (
-                      <li className="text-base text-gray-700 leading-relaxed">{children}</li>
+                      <li className="text-base text-gray-700 leading-relaxed">
+                        {children}
+                      </li>
                     ),
                     code: ({ className, children }) => {
-                      const isInline = !className;
+                      const isInline = !className
                       if (isInline) {
                         return (
                           <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono">
                             {children}
                           </code>
-                        );
+                        )
                       }
                       return (
                         <code className="block bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm font-mono">
                           {children}
                         </code>
-                      );
+                      )
                     },
                     pre: ({ children }) => (
                       <pre className="mb-4">{children}</pre>
@@ -268,10 +300,17 @@ export default function SkillFilesExplorer({ skillId, skillName, skillDescriptio
                       </blockquote>
                     ),
                     strong: ({ children }) => (
-                      <strong className="font-semibold text-gray-900">{children}</strong>
+                      <strong className="font-semibold text-gray-900">
+                        {children}
+                      </strong>
                     ),
                     a: ({ href, children }) => (
-                      <a href={href} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
+                      <a
+                        href={href}
+                        className="text-blue-600 hover:underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         {children}
                       </a>
                     ),
@@ -293,5 +332,5 @@ export default function SkillFilesExplorer({ skillId, skillName, skillDescriptio
         )}
       </div>
     </div>
-  );
+  )
 }

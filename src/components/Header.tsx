@@ -1,65 +1,70 @@
-import { Search, Plus, Lock } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { api } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
-import type { Skill } from '../types';
+import { Search, Plus, Lock } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+
+import { api } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
+import type { Skill } from '../types'
 
 interface HeaderProps {
-  onSearch?: (query: string) => void;
+  onSearch?: (query: string) => void
 }
 
 const Header = ({ onSearch }: HeaderProps) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<Skill[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const searchRef = useRef<HTMLDivElement>(null);
-  const { user, isAuthenticated, isLoading, signIn, signUp, signOut } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('')
+  const [suggestions, setSuggestions] = useState<Skill[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
+  const searchRef = useRef<HTMLDivElement>(null)
+  const { user, isAuthenticated, isLoading, signIn, signUp, signOut } =
+    useAuth()
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false)
       }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (searchQuery.trim().length < 2) {
-        setSuggestions([]);
-        return;
+        setSuggestions([])
+        return
       }
-      setLoading(true);
+      setLoading(true)
       try {
-        const response = await api.searchSkills(searchQuery);
-        setSuggestions(response.data.slice(0, 5));
+        const response = await api.searchSkills(searchQuery)
+        setSuggestions(response.data.slice(0, 5))
       } catch (error) {
-        console.error('Search error:', error);
+        console.error('Search error:', error)
       } finally {
-        setLoading(false);
-      }
-    };
-
-    const debounce = setTimeout(fetchSuggestions, 300);
-    return () => clearTimeout(debounce);
-  }, [searchQuery]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowSuggestions(false);
-    if (searchQuery.trim()) {
-      if (onSearch) {
-        onSearch(searchQuery);
-      } else {
-        navigate(`/skills?search=${encodeURIComponent(searchQuery)}`);
+        setLoading(false)
       }
     }
-  };
+
+    const debounce = setTimeout(fetchSuggestions, 300)
+    return () => clearTimeout(debounce)
+  }, [searchQuery])
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    setShowSuggestions(false)
+    if (searchQuery.trim()) {
+      if (onSearch) {
+        onSearch(searchQuery)
+      } else {
+        navigate(`/skills?search=${encodeURIComponent(searchQuery)}`)
+      }
+    }
+  }
 
   return (
     <header className="bg-black sticky top-0 z-50">
@@ -76,14 +81,17 @@ const Header = ({ onSearch }: HeaderProps) => {
           <div ref={searchRef} className="flex-1 relative">
             <form onSubmit={handleSearch}>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  size={16}
+                />
                 <input
                   type="text"
                   placeholder="Search skills"
                   value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setShowSuggestions(true);
+                  onChange={e => {
+                    setSearchQuery(e.target.value)
+                    setShowSuggestions(true)
                   }}
                   onFocus={() => setShowSuggestions(true)}
                   className="w-full pl-9 pr-4 py-1.5 bg-white border-0 rounded text-sm focus:outline-none focus:ring-2 focus:ring-white text-gray-900"
@@ -98,14 +106,16 @@ const Header = ({ onSearch }: HeaderProps) => {
                   <div className="p-3 text-gray-500 text-sm">Searching...</div>
                 ) : suggestions.length > 0 ? (
                   <ul>
-                    {suggestions.map((skill) => (
+                    {suggestions.map(skill => (
                       <li key={skill.id}>
                         <Link
                           to={`/skills/${skill.full_id}`}
                           onClick={() => setShowSuggestions(false)}
                           className="block px-4 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
                         >
-                          <div className="font-medium text-sm text-gray-900">{skill.name}</div>
+                          <div className="font-medium text-sm text-gray-900">
+                            {skill.name}
+                          </div>
                           <div className="text-xs text-gray-500 truncate">
                             {skill.description}
                           </div>
@@ -114,7 +124,9 @@ const Header = ({ onSearch }: HeaderProps) => {
                     ))}
                   </ul>
                 ) : (
-                  <div className="p-3 text-gray-500 text-sm">No skills found</div>
+                  <div className="p-3 text-gray-500 text-sm">
+                    No skills found
+                  </div>
                 )}
               </div>
             )}
@@ -152,7 +164,9 @@ const Header = ({ onSearch }: HeaderProps) => {
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
                       <span className="text-sm font-medium text-white">
-                        {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
+                        {user.name?.charAt(0).toUpperCase() ||
+                          user.email?.charAt(0).toUpperCase() ||
+                          'U'}
                       </span>
                     </div>
                   )}
@@ -188,7 +202,7 @@ const Header = ({ onSearch }: HeaderProps) => {
         </div>
       </div>
     </header>
-  );
-};
+  )
+}
 
-export default Header;
+export default Header

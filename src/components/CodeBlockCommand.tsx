@@ -1,44 +1,47 @@
-import { useState } from 'react';
-import { Check, Copy } from 'lucide-react';
+import { useState } from 'react'
+import { Check, Copy } from 'lucide-react'
 
 interface CodeBlockCommandProps {
-  repoUrl: string;
-  skillPath: string;
+  repoUrl: string
+  skillPath: string
 }
 
-type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun';
+type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun'
 
-export default function CodeBlockCommand({ repoUrl, skillPath }: CodeBlockCommandProps) {
-  const [selected, setSelected] = useState<PackageManager>('pnpm');
-  const [copied, setCopied] = useState(false);
+export default function CodeBlockCommand({
+  repoUrl,
+  skillPath,
+}: CodeBlockCommandProps) {
+  const [selected, setSelected] = useState<PackageManager>('pnpm')
+  const [copied, setCopied] = useState(false)
 
   const getCommand = (pm: PackageManager) => {
-    const skillUrl = `${repoUrl}/tree/main/${skillPath}`;
+    const skillUrl = `${repoUrl}/tree/main/${skillPath}`
     switch (pm) {
       case 'pnpm':
-        return `pnpm dlx add-skill ${skillUrl}`;
+        return `pnpm dlx add-skill ${skillUrl}`
       case 'npm':
-        return `npx add-skill ${skillUrl}`;
+        return `npx add-skill ${skillUrl}`
       case 'yarn':
-        return `yarn dlx add-skill ${skillUrl}`;
+        return `yarn dlx add-skill ${skillUrl}`
       case 'bun':
-        return `bunx add-skill ${skillUrl}`;
+        return `bunx add-skill ${skillUrl}`
     }
-  };
+  }
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(getCommand(selected));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    await navigator.clipboard.writeText(getCommand(selected))
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
-  const managers: PackageManager[] = ['pnpm', 'npm', 'yarn', 'bun'];
+  const managers: PackageManager[] = ['pnpm', 'npm', 'yarn', 'bun']
 
   return (
     <div className="bg-gray-900 rounded-lg overflow-hidden">
       {/* Tabs */}
       <div className="flex border-b border-gray-700">
-        {managers.map((pm) => (
+        {managers.map(pm => (
           <button
             key={pm}
             onClick={() => setSelected(pm)}
@@ -63,9 +66,13 @@ export default function CodeBlockCommand({ repoUrl, skillPath }: CodeBlockComman
           className="ml-4 p-2 text-gray-400 hover:text-white transition-colors"
           title="Copy to clipboard"
         >
-          {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}
+          {copied ? (
+            <Check className="w-5 h-5 text-green-500" />
+          ) : (
+            <Copy className="w-5 h-5" />
+          )}
         </button>
       </div>
     </div>
-  );
+  )
 }

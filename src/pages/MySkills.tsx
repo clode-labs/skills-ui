@@ -1,95 +1,99 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import SkillCard from '../components/SkillCard';
-import { authApi } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
-import type { Skill, PaginationMeta } from '../types';
-import { Loader2, Plus, ChevronLeft, ChevronRight, Lock } from 'lucide-react';
+import { useEffect, useState } from 'react'
+import { useSearchParams, Link, useNavigate } from 'react-router-dom'
+import { Loader2, Plus, ChevronLeft, ChevronRight, Lock } from 'lucide-react'
 
-const ITEMS_PER_PAGE = 20;
+import SkillCard from '../components/SkillCard'
+import { authApi } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
+import type { Skill, PaginationMeta } from '../types'
+
+const ITEMS_PER_PAGE = 20
 
 const MySkills = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState<PaginationMeta | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [skills, setSkills] = useState<Skill[]>([])
+  const [loading, setLoading] = useState(true)
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const navigate = useNavigate()
 
-  const pageFromUrl = parseInt(searchParams.get('page') || '1', 10);
+  const pageFromUrl = parseInt(searchParams.get('page') || '1', 10)
 
   // Redirect to sign in if not authenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      navigate('/signin', { replace: true });
+      navigate('/signin', { replace: true })
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, navigate])
 
   // Sync with URL params
   useEffect(() => {
-    setCurrentPage(pageFromUrl);
-  }, [pageFromUrl]);
+    setCurrentPage(pageFromUrl)
+  }, [pageFromUrl])
 
   useEffect(() => {
     if (isAuthenticated) {
-      loadData();
+      loadData()
     }
-  }, [currentPage, isAuthenticated]);
+  }, [currentPage, isAuthenticated])
 
   const loadData = async () => {
     try {
-      setLoading(true);
-      const response = await authApi.getPrivateSkills(currentPage, ITEMS_PER_PAGE);
-      setSkills(response.data);
-      setPagination(response.pagination || null);
+      setLoading(true)
+      const response = await authApi.getPrivateSkills(
+        currentPage,
+        ITEMS_PER_PAGE,
+      )
+      setSkills(response.data)
+      setPagination(response.pagination || null)
     } catch (error) {
-      console.error('Error loading private skills:', error);
+      console.error('Error loading private skills:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
-    const params = new URLSearchParams(searchParams);
+    setCurrentPage(newPage)
+    const params = new URLSearchParams(searchParams)
     if (newPage === 1) {
-      params.delete('page');
+      params.delete('page')
     } else {
-      params.set('page', newPage.toString());
+      params.set('page', newPage.toString())
     }
-    setSearchParams(params);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+    setSearchParams(params)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
-  const totalSkills = pagination?.total_items || skills.length;
-  const totalPages = pagination?.total_pages || 1;
+  const totalSkills = pagination?.total_items || skills.length
+  const totalPages = pagination?.total_pages || 1
 
   const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    const maxVisible = 7;
+    const pages: (number | string)[] = []
+    const maxVisible = 7
 
     if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
+      for (let i = 1; i <= totalPages; i++) pages.push(i)
     } else {
       if (currentPage <= 3) {
-        for (let i = 1; i <= 5; i++) pages.push(i);
-        pages.push('...');
-        pages.push(totalPages);
+        for (let i = 1; i <= 5; i++) pages.push(i)
+        pages.push('...')
+        pages.push(totalPages)
       } else if (currentPage >= totalPages - 2) {
-        pages.push(1);
-        pages.push('...');
-        for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+        pages.push(1)
+        pages.push('...')
+        for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i)
       } else {
-        pages.push(1);
-        pages.push('...');
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
-        pages.push('...');
-        pages.push(totalPages);
+        pages.push(1)
+        pages.push('...')
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i)
+        pages.push('...')
+        pages.push(totalPages)
       }
     }
-    return pages;
-  };
+    return pages
+  }
 
   // Show loading while checking auth
   if (authLoading) {
@@ -97,7 +101,7 @@ const MySkills = () => {
       <div className="bg-white min-h-screen flex items-center justify-center">
         <Loader2 className="animate-spin text-gray-400" size={32} />
       </div>
-    );
+    )
   }
 
   return (
@@ -106,17 +110,29 @@ const MySkills = () => {
       <div className="border-b border-gray-200 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <nav className="flex items-center gap-6">
-            <Link to="/skills" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+            <Link
+              to="/skills"
+              className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+            >
               Skills
             </Link>
-            <Link to="/my-skills" className="py-3 px-1 text-sm font-medium text-gray-900 border-b-2 border-black flex items-center gap-1.5">
+            <Link
+              to="/my-skills"
+              className="py-3 px-1 text-sm font-medium text-gray-900 border-b-2 border-black flex items-center gap-1.5"
+            >
               <Lock size={14} />
               My Skills
             </Link>
-            <Link to="/authors" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+            <Link
+              to="/authors"
+              className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+            >
               Authors
             </Link>
-            <Link to="/categories" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+            <Link
+              to="/categories"
+              className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+            >
               Categories
             </Link>
           </nav>
@@ -154,7 +170,9 @@ const MySkills = () => {
         ) : skills.length === 0 ? (
           <div className="text-center py-20 border border-dashed border-gray-300 rounded-lg">
             <Lock size={48} className="mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No private skills yet</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No private skills yet
+            </h3>
             <p className="text-gray-500 mb-4">
               Submit a skill and mark it as private to see it here
             </p>
@@ -173,7 +191,7 @@ const MySkills = () => {
             </div>
 
             <div className="border-t border-gray-200">
-              {skills.map((skill) => (
+              {skills.map(skill => (
                 <SkillCard key={skill.id} skill={skill} />
               ))}
             </div>
@@ -182,7 +200,9 @@ const MySkills = () => {
             {totalPages > 1 && (
               <div className="flex items-center justify-between border-t border-gray-200 pt-6 mt-6">
                 <div className="text-sm text-gray-500">
-                  Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalSkills)} of {totalSkills} skills
+                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} -{' '}
+                  {Math.min(currentPage * ITEMS_PER_PAGE, totalSkills)} of{' '}
+                  {totalSkills} skills
                 </div>
 
                 <div className="flex items-center gap-1">
@@ -194,9 +214,14 @@ const MySkills = () => {
                     <ChevronLeft size={20} />
                   </button>
 
-                  {getPageNumbers().map((page, index) => (
+                  {getPageNumbers().map((page, index) =>
                     page === '...' ? (
-                      <span key={`ellipsis-${index}`} className="px-3 py-1 text-gray-400">...</span>
+                      <span
+                        key={`ellipsis-${index}`}
+                        className="px-3 py-1 text-gray-400"
+                      >
+                        ...
+                      </span>
                     ) : (
                       <button
                         key={page}
@@ -209,8 +234,8 @@ const MySkills = () => {
                       >
                         {page}
                       </button>
-                    )
-                  ))}
+                    ),
+                  )}
 
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
@@ -226,7 +251,7 @@ const MySkills = () => {
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default MySkills;
+export default MySkills

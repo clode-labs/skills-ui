@@ -1,44 +1,57 @@
-import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { api, authApi } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
-import type { ImportResponse, ImportJobResponse, ImportJob } from '../types';
-import { isAsyncImportResponse } from '../types';
-import { Loader2, CheckCircle, AlertCircle, Github, FileDown, Lock, Clock, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
+import {
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+  Github,
+  FileDown,
+  Lock,
+  Clock,
+  RefreshCw,
+} from 'lucide-react'
+
+import { api, authApi } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
+import type { ImportResponse, ImportJobResponse, ImportJob } from '../types'
+import { isAsyncImportResponse } from '../types'
 
 export default function Import() {
-  const { isAuthenticated } = useAuth();
-  const [url, setUrl] = useState('');
-  const [isPrivate, setIsPrivate] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<ImportResponse | null>(null);
-  const [jobResponse, setJobResponse] = useState<ImportJobResponse | null>(null);
-  const [jobStatus, setJobStatus] = useState<ImportJob | null>(null);
-  const [error, setError] = useState('');
-  const [polling, setPolling] = useState(false);
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { isAuthenticated } = useAuth()
+  const [url, setUrl] = useState('')
+  const [isPrivate, setIsPrivate] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<ImportResponse | null>(null)
+  const [jobResponse, setJobResponse] = useState<ImportJobResponse | null>(null)
+  const [jobStatus, setJobStatus] = useState<ImportJob | null>(null)
+  const [error, setError] = useState('')
+  const [polling, setPolling] = useState(false)
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Cleanup polling on unmount
   useEffect(() => {
     return () => {
       if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
+        clearInterval(pollIntervalRef.current)
       }
-    };
-  }, []);
+    }
+  }, [])
 
   const pollJobStatus = async (jobId: string) => {
     try {
-      const apiClient = isAuthenticated ? authApi : api;
-      const response = await apiClient.getJobStatus(jobId);
-      setJobStatus(response.job);
+      const apiClient = isAuthenticated ? authApi : api
+      const response = await apiClient.getJobStatus(jobId)
+      setJobStatus(response.job)
 
       // Stop polling if job is completed or failed
-      if (response.job.status === 'completed' || response.job.status === 'failed') {
-        setPolling(false);
+      if (
+        response.job.status === 'completed' ||
+        response.job.status === 'failed'
+      ) {
+        setPolling(false)
         if (pollIntervalRef.current) {
-          clearInterval(pollIntervalRef.current);
-          pollIntervalRef.current = null;
+          clearInterval(pollIntervalRef.current)
+          pollIntervalRef.current = null
         }
 
         // If completed, convert to regular result format
@@ -47,89 +60,89 @@ export default function Import() {
             success: true,
             imported: response.job.imported_skills || [],
             rejected: response.job.rejected_skills || [],
-          });
-          setJobResponse(null);
-          setJobStatus(null);
+          })
+          setJobResponse(null)
+          setJobStatus(null)
         }
       }
     } catch (err) {
-      console.error('Failed to poll job status:', err);
+      console.error('Failed to poll job status:', err)
       // Don't stop polling on transient errors
     }
-  };
+  }
 
   const startPolling = (jobId: string) => {
-    setPolling(true);
+    setPolling(true)
     // Poll immediately
-    pollJobStatus(jobId);
+    pollJobStatus(jobId)
     // Then poll every 3 seconds
-    pollIntervalRef.current = setInterval(() => pollJobStatus(jobId), 3000);
-  };
+    pollIntervalRef.current = setInterval(() => pollJobStatus(jobId), 3000)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setResult(null);
-    setJobResponse(null);
-    setJobStatus(null);
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    setResult(null)
+    setJobResponse(null)
+    setJobStatus(null)
 
     // Stop any existing polling
     if (pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current);
-      pollIntervalRef.current = null;
+      clearInterval(pollIntervalRef.current)
+      pollIntervalRef.current = null
     }
 
     try {
       // Use authenticated endpoint if logged in, otherwise public endpoint
       const response = isAuthenticated
         ? await authApi.submitRepo(url, isPrivate)
-        : await api.submitRepo(url);
+        : await api.submitRepo(url)
 
       // Check if this is an async response
       if (isAsyncImportResponse(response)) {
-        setJobResponse(response);
+        setJobResponse(response)
         // Start polling for job status
-        startPolling(response.job_id);
+        startPolling(response.job_id)
       } else {
-        setResult(response);
+        setResult(response)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Import failed');
+      setError(err instanceof Error ? err.message : 'Import failed')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
-        return 'text-yellow-600 bg-yellow-50';
+        return 'text-yellow-600 bg-yellow-50'
       case 'processing':
-        return 'text-blue-600 bg-blue-50';
+        return 'text-blue-600 bg-blue-50'
       case 'completed':
-        return 'text-green-600 bg-green-50';
+        return 'text-green-600 bg-green-50'
       case 'failed':
-        return 'text-red-600 bg-red-50';
+        return 'text-red-600 bg-red-50'
       default:
-        return 'text-gray-600 bg-gray-50';
+        return 'text-gray-600 bg-gray-50'
     }
-  };
+  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Clock className="animate-pulse" size={20} />;
+        return <Clock className="animate-pulse" size={20} />
       case 'processing':
-        return <RefreshCw className="animate-spin" size={20} />;
+        return <RefreshCw className="animate-spin" size={20} />
       case 'completed':
-        return <CheckCircle size={20} />;
+        return <CheckCircle size={20} />
       case 'failed':
-        return <AlertCircle size={20} />;
+        return <AlertCircle size={20} />
       default:
-        return <Clock size={20} />;
+        return <Clock size={20} />
     }
-  };
+  }
 
   return (
     <div className="bg-white min-h-screen">
@@ -137,13 +150,22 @@ export default function Import() {
       <div className="border-b border-gray-200 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <nav className="flex items-center gap-6">
-            <Link to="/skills" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+            <Link
+              to="/skills"
+              className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+            >
               Skills
             </Link>
-            <Link to="/authors" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+            <Link
+              to="/authors"
+              className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+            >
               Authors
             </Link>
-            <Link to="/categories" className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300">
+            <Link
+              to="/categories"
+              className="py-3 px-1 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300"
+            >
               Categories
             </Link>
           </nav>
@@ -154,19 +176,23 @@ export default function Import() {
       <div className="max-w-2xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-2">Submit a Skill</h1>
         <p className="text-gray-600 mb-6">
-          Enter a GitHub repository URL to import skills. The repository should contain
-          a <code className="bg-gray-100 px-1 rounded">skills/</code> folder with skill
-          subfolders containing <code className="bg-gray-100 px-1 rounded">SKILL.md</code> files.
+          Enter a GitHub repository URL to import skills. The repository should
+          contain a <code className="bg-gray-100 px-1 rounded">skills/</code>{' '}
+          folder with skill subfolders containing{' '}
+          <code className="bg-gray-100 px-1 rounded">SKILL.md</code> files.
         </p>
 
         <form onSubmit={handleSubmit} className="mb-6">
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Github className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <Github
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={20}
+              />
               <input
                 type="text"
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={e => setUrl(e.target.value)}
                 placeholder="https://github.com/owner/repo or owner/repo"
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 disabled={loading || polling}
@@ -194,7 +220,9 @@ export default function Import() {
           {/* Visibility option - only shown when authenticated */}
           {isAuthenticated && (
             <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <p className="text-sm font-medium text-gray-700 mb-3">Skill visibility:</p>
+              <p className="text-sm font-medium text-gray-700 mb-3">
+                Skill visibility:
+              </p>
               <div className="space-y-2">
                 <label className="flex items-start gap-3 cursor-pointer p-2 rounded-md hover:bg-gray-100">
                   <input
@@ -206,8 +234,12 @@ export default function Import() {
                     disabled={loading || polling}
                   />
                   <div>
-                    <span className="text-sm font-medium text-gray-900">Public</span>
-                    <p className="text-xs text-gray-500">Visible to everyone in the skills registry</p>
+                    <span className="text-sm font-medium text-gray-900">
+                      Public
+                    </span>
+                    <p className="text-xs text-gray-500">
+                      Visible to everyone in the skills registry
+                    </p>
                   </div>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer p-2 rounded-md hover:bg-gray-100">
@@ -221,10 +253,14 @@ export default function Import() {
                   />
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900">Private</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        Private
+                      </span>
                       <Lock size={14} className="text-gray-400" />
                     </div>
-                    <p className="text-xs text-gray-500">Only visible to you in "My Skills"</p>
+                    <p className="text-xs text-gray-500">
+                      Only visible to you in "My Skills"
+                    </p>
                   </div>
                 </label>
               </div>
@@ -242,17 +278,24 @@ export default function Import() {
         {/* Async Job Status */}
         {(jobResponse || jobStatus) && !result && (
           <div className="space-y-4 mb-4">
-            <div className={`border rounded-lg p-4 ${getStatusColor(jobStatus?.status || jobResponse?.status || 'pending')}`}>
+            <div
+              className={`border rounded-lg p-4 ${getStatusColor(jobStatus?.status || jobResponse?.status || 'pending')}`}
+            >
               <div className="flex items-center gap-3 mb-3">
-                {getStatusIcon(jobStatus?.status || jobResponse?.status || 'pending')}
+                {getStatusIcon(
+                  jobStatus?.status || jobResponse?.status || 'pending',
+                )}
                 <div>
                   <h3 className="font-semibold">
-                    {jobStatus?.status === 'processing' ? 'Processing Import...' :
-                     jobStatus?.status === 'failed' ? 'Import Failed' :
-                     'Import Job Queued'}
+                    {jobStatus?.status === 'processing'
+                      ? 'Processing Import...'
+                      : jobStatus?.status === 'failed'
+                        ? 'Import Failed'
+                        : 'Import Job Queued'}
                   </h3>
                   <p className="text-sm opacity-75">
-                    {jobResponse?.message || `Job ID: ${jobStatus?.id || jobResponse?.job_id}`}
+                    {jobResponse?.message ||
+                      `Job ID: ${jobStatus?.id || jobResponse?.job_id}`}
                   </p>
                 </div>
               </div>
@@ -261,16 +304,20 @@ export default function Import() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Status:</span>
-                    <span className="font-medium capitalize">{jobStatus.status}</span>
+                    <span className="font-medium capitalize">
+                      {jobStatus.status}
+                    </span>
                   </div>
                   {jobStatus.status === 'processing' && (
                     <p className="text-xs mt-2">
-                      Your skills are being imported from GitHub. This page will automatically update when complete.
+                      Your skills are being imported from GitHub. This page will
+                      automatically update when complete.
                     </p>
                   )}
                   {jobStatus.status === 'pending' && (
                     <p className="text-xs mt-2">
-                      Your import request is queued and will be processed shortly. This page will automatically update.
+                      Your import request is queued and will be processed
+                      shortly. This page will automatically update.
                     </p>
                   )}
                   {jobStatus.status === 'failed' && jobStatus.last_error && (
@@ -293,13 +340,20 @@ export default function Import() {
             {/* Info box about async processing */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <Clock className="flex-shrink-0 mt-0.5 text-blue-600" size={20} />
+                <Clock
+                  className="flex-shrink-0 mt-0.5 text-blue-600"
+                  size={20}
+                />
                 <div className="text-sm text-blue-800">
-                  <p className="font-medium mb-1">Skills are processed asynchronously</p>
+                  <p className="font-medium mb-1">
+                    Skills are processed asynchronously
+                  </p>
                   <p>
-                    Your skills will be imported in the background. Once imported, they may undergo
-                    additional AI enrichment to automatically categorize and tag them. You can safely
-                    navigate away - your skills will appear in the registry once processing is complete.
+                    Your skills will be imported in the background. Once
+                    imported, they may undergo additional AI enrichment to
+                    automatically categorize and tag them. You can safely
+                    navigate away - your skills will appear in the registry once
+                    processing is complete.
                   </p>
                 </div>
               </div>
@@ -318,12 +372,13 @@ export default function Import() {
                   </h3>
                 </div>
                 <ul className="list-disc list-inside text-green-700">
-                  {result.imported.map((item) => (
+                  {result.imported.map(item => (
                     <li key={item.full_id}>{item.full_id}</li>
                   ))}
                 </ul>
                 <p className="mt-3 text-sm text-green-600">
-                  Skills may take a moment to appear as they undergo AI enrichment for categorization and tagging.
+                  Skills may take a moment to appear as they undergo AI
+                  enrichment for categorization and tagging.
                 </p>
               </div>
             )}
@@ -338,7 +393,9 @@ export default function Import() {
                 </div>
                 <ul className="list-disc list-inside text-yellow-700">
                   {result.rejected.map((item, i) => (
-                    <li key={i}>{item.path}: {item.reason}</li>
+                    <li key={i}>
+                      {item.path}: {item.reason}
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -350,13 +407,21 @@ export default function Import() {
         <div className="mt-8 bg-gray-50 rounded-lg p-4">
           <h3 className="font-semibold mb-2">Supported URL formats:</h3>
           <ul className="list-disc list-inside text-gray-600 space-y-1">
-            <li><code>owner/repo</code></li>
-            <li><code>owner/repo/custom-skills-path</code></li>
-            <li><code>https://github.com/owner/repo</code></li>
-            <li><code>https://github.com/owner/repo/tree/main/skills</code></li>
+            <li>
+              <code>owner/repo</code>
+            </li>
+            <li>
+              <code>owner/repo/custom-skills-path</code>
+            </li>
+            <li>
+              <code>https://github.com/owner/repo</code>
+            </li>
+            <li>
+              <code>https://github.com/owner/repo/tree/main/skills</code>
+            </li>
           </ul>
         </div>
       </div>
     </div>
-  );
+  )
 }

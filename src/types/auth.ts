@@ -19,7 +19,11 @@ export interface AuthContextType extends AuthState {
   signUp: () => void
   signOut: () => void
   refreshAccessToken: () => Promise<boolean>
-  setCredentials: (user: User, accessToken: string, refreshToken: string) => void
+  setCredentials: (
+    user: User,
+    accessToken: string,
+    refreshToken: string,
+  ) => void
 }
 
 export interface TokenExchangeResponse {
