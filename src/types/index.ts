@@ -140,6 +140,45 @@ export interface ImportResponse {
   rejected: ImportRejection[];
 }
 
+// Async import job response (returned when async mode is enabled)
+export interface ImportJobResponse {
+  success: boolean;
+  job_id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  message: string;
+}
+
+// Import job details
+export interface ImportJob {
+  id: string;
+  github_url: string;
+  user_id?: string;
+  is_private: boolean;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  retry_count: number;
+  max_retries: number;
+  last_error?: string;
+  imported_skills?: ImportResult[];
+  rejected_skills?: ImportRejection[];
+  worker_id?: string;
+  started_at?: string;
+  completed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Import job status response
+export interface ImportJobStatusResponse {
+  job: ImportJob;
+  success_count: number;
+  failed_count: number;
+}
+
+// Type guard to check if response is async job response
+export function isAsyncImportResponse(response: ImportResponse | ImportJobResponse): response is ImportJobResponse {
+  return 'job_id' in response;
+}
+
 export interface SkillVersionResponse {
   success: boolean;
   data: SkillVersion;

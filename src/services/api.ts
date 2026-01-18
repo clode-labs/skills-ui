@@ -4,6 +4,8 @@ import type {
   CategoryListResponse,
   TagListResponse,
   ImportResponse,
+  ImportJobResponse,
+  ImportJobStatusResponse,
   SkillWithVersionResponse,
   AuthorResponse,
   AuthorListResponse,
@@ -96,12 +98,17 @@ export const api = {
     return fetchAPI<SkillListResponse>(`/authors/${slug}/skills?page=${page}&limit=${limit}`);
   },
 
-  // Import endpoint (public)
+  // Import endpoint (public) - may return sync or async response
   submitRepo: (url: string) => {
-    return fetchAPI<ImportResponse>('/import', {
+    return fetchAPI<ImportResponse | ImportJobResponse>('/import', {
       method: 'POST',
       body: JSON.stringify({ path: url }),
     });
+  },
+
+  // Get import job status
+  getJobStatus: (jobId: string) => {
+    return fetchAPI<ImportJobStatusResponse>(`/import/jobs/${jobId}`);
   },
 
   // Skill file endpoints
@@ -149,13 +156,18 @@ export const authApi = {
     return fetchAPI<SkillListResponse>(`/api/v1/skills/private?${params}`, { requiresAuth: true });
   },
 
-  // Import with private option
+  // Import with private option - may return sync or async response
   submitRepo: (url: string, isPrivate = false) => {
-    return fetchAPI<ImportResponse>('/api/v1/import', {
+    return fetchAPI<ImportResponse | ImportJobResponse>('/api/v1/import', {
       method: 'POST',
       body: JSON.stringify({ path: url, is_private: isPrivate }),
       requiresAuth: true,
     });
+  },
+
+  // Get import job status (authenticated)
+  getJobStatus: (jobId: string) => {
+    return fetchAPI<ImportJobStatusResponse>(`/api/v1/import/jobs/${jobId}`, { requiresAuth: true });
   },
 
   // Categories (includes private skill counts for user)

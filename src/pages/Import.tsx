@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { api, authApi } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import type { ImportResponse } from '../types';
-import { Loader2, CheckCircle, AlertCircle, Github, FileDown, Lock } from 'lucide-react';
+import type { ImportResponse, ImportJobResponse, ImportJob } from '../types';
+import { isAsyncImportResponse } from '../types';
+import { Loader2, CheckCircle, AlertCircle, Github, FileDown, Lock, Clock, RefreshCw } from 'lucide-react';
 
 export default function Import() {
   const { isAuthenticated } = useAuth();
@@ -11,24 +12,122 @@ export default function Import() {
   const [isPrivate, setIsPrivate] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ImportResponse | null>(null);
+  const [jobResponse, setJobResponse] = useState<ImportJobResponse | null>(null);
+  const [jobStatus, setJobStatus] = useState<ImportJob | null>(null);
   const [error, setError] = useState('');
+  const [polling, setPolling] = useState(false);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
+
+  const pollJobStatus = async (jobId: string) => {
+    try {
+      const apiClient = isAuthenticated ? authApi : api;
+      const response = await apiClient.getJobStatus(jobId);
+      setJobStatus(response.job);
+
+      // Stop polling if job is completed or failed
+      if (response.job.status === 'completed' || response.job.status === 'failed') {
+        setPolling(false);
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+
+        // If completed, convert to regular result format
+        if (response.job.status === 'completed') {
+          setResult({
+            success: true,
+            imported: response.job.imported_skills || [],
+            rejected: response.job.rejected_skills || [],
+          });
+          setJobResponse(null);
+          setJobStatus(null);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to poll job status:', err);
+      // Don't stop polling on transient errors
+    }
+  };
+
+  const startPolling = (jobId: string) => {
+    setPolling(true);
+    // Poll immediately
+    pollJobStatus(jobId);
+    // Then poll every 3 seconds
+    pollIntervalRef.current = setInterval(() => pollJobStatus(jobId), 3000);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setResult(null);
+    setJobResponse(null);
+    setJobStatus(null);
+
+    // Stop any existing polling
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
 
     try {
       // Use authenticated endpoint if logged in, otherwise public endpoint
       const response = isAuthenticated
         ? await authApi.submitRepo(url, isPrivate)
         : await api.submitRepo(url);
-      setResult(response);
+
+      // Check if this is an async response
+      if (isAsyncImportResponse(response)) {
+        setJobResponse(response);
+        // Start polling for job status
+        startPolling(response.job_id);
+      } else {
+        setResult(response);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Import failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'text-yellow-600 bg-yellow-50';
+      case 'processing':
+        return 'text-blue-600 bg-blue-50';
+      case 'completed':
+        return 'text-green-600 bg-green-50';
+      case 'failed':
+        return 'text-red-600 bg-red-50';
+      default:
+        return 'text-gray-600 bg-gray-50';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Clock className="animate-pulse" size={20} />;
+      case 'processing':
+        return <RefreshCw className="animate-spin" size={20} />;
+      case 'completed':
+        return <CheckCircle size={20} />;
+      case 'failed':
+        return <AlertCircle size={20} />;
+      default:
+        return <Clock size={20} />;
     }
   };
 
@@ -70,18 +169,18 @@ export default function Import() {
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://github.com/owner/repo or owner/repo"
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                disabled={loading}
+                disabled={loading || polling}
               />
             </div>
             <button
               type="submit"
-              disabled={loading || !url.trim()}
+              disabled={loading || polling || !url.trim()}
               className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {loading ? (
                 <>
                   <Loader2 className="animate-spin" size={20} />
-                  Importing...
+                  Submitting...
                 </>
               ) : (
                 <>
@@ -104,7 +203,7 @@ export default function Import() {
                     checked={!isPrivate}
                     onChange={() => setIsPrivate(false)}
                     className="mt-0.5 w-4 h-4 border-gray-300 text-blue-600 focus:ring-blue-500"
-                    disabled={loading}
+                    disabled={loading || polling}
                   />
                   <div>
                     <span className="text-sm font-medium text-gray-900">Public</span>
@@ -118,13 +217,15 @@ export default function Import() {
                     checked={isPrivate}
                     onChange={() => setIsPrivate(true)}
                     className="mt-0.5 w-4 h-4 border-gray-300 text-blue-600 focus:ring-blue-500"
-                    disabled={loading}
+                    disabled={loading || polling}
                   />
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900">Private</span>
-                    <Lock size={14} className="text-gray-400" />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-900">Private</span>
+                      <Lock size={14} className="text-gray-400" />
+                    </div>
+                    <p className="text-xs text-gray-500">Only visible to you in "My Skills"</p>
                   </div>
-                  <p className="text-xs text-gray-500 -mt-5 ml-6">Only visible to you in "My Skills"</p>
                 </label>
               </div>
             </div>
@@ -135,6 +236,74 @@ export default function Import() {
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-start gap-3">
             <AlertCircle className="flex-shrink-0 mt-0.5" size={20} />
             <div>{error}</div>
+          </div>
+        )}
+
+        {/* Async Job Status */}
+        {(jobResponse || jobStatus) && !result && (
+          <div className="space-y-4 mb-4">
+            <div className={`border rounded-lg p-4 ${getStatusColor(jobStatus?.status || jobResponse?.status || 'pending')}`}>
+              <div className="flex items-center gap-3 mb-3">
+                {getStatusIcon(jobStatus?.status || jobResponse?.status || 'pending')}
+                <div>
+                  <h3 className="font-semibold">
+                    {jobStatus?.status === 'processing' ? 'Processing Import...' :
+                     jobStatus?.status === 'failed' ? 'Import Failed' :
+                     'Import Job Queued'}
+                  </h3>
+                  <p className="text-sm opacity-75">
+                    {jobResponse?.message || `Job ID: ${jobStatus?.id || jobResponse?.job_id}`}
+                  </p>
+                </div>
+              </div>
+
+              {jobStatus && (
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Status:</span>
+                    <span className="font-medium capitalize">{jobStatus.status}</span>
+                  </div>
+                  {jobStatus.status === 'processing' && (
+                    <p className="text-xs mt-2">
+                      Your skills are being imported from GitHub. This page will automatically update when complete.
+                    </p>
+                  )}
+                  {jobStatus.status === 'pending' && (
+                    <p className="text-xs mt-2">
+                      Your import request is queued and will be processed shortly. This page will automatically update.
+                    </p>
+                  )}
+                  {jobStatus.status === 'failed' && jobStatus.last_error && (
+                    <div className="mt-2 p-2 bg-red-100 rounded text-red-800">
+                      <span className="font-medium">Error: </span>
+                      {jobStatus.last_error}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {polling && (
+                <div className="mt-3 flex items-center gap-2 text-xs opacity-75">
+                  <RefreshCw className="animate-spin" size={12} />
+                  Checking status...
+                </div>
+              )}
+            </div>
+
+            {/* Info box about async processing */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <Clock className="flex-shrink-0 mt-0.5 text-blue-600" size={20} />
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium mb-1">Skills are processed asynchronously</p>
+                  <p>
+                    Your skills will be imported in the background. Once imported, they may undergo
+                    additional AI enrichment to automatically categorize and tag them. You can safely
+                    navigate away - your skills will appear in the registry once processing is complete.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -153,6 +322,9 @@ export default function Import() {
                     <li key={item.full_id}>{item.full_id}</li>
                   ))}
                 </ul>
+                <p className="mt-3 text-sm text-green-600">
+                  Skills may take a moment to appear as they undergo AI enrichment for categorization and tagging.
+                </p>
               </div>
             )}
 

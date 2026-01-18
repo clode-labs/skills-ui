@@ -117,13 +117,38 @@ export default function SkillFilesExplorer({ skillId, skillName, skillDescriptio
     setContentLoading(true);
     try {
       // Get the relative path from the skill root
-      // tree.path is the skill root (e.g., ".claude/skills/ai-sdk-v6")
-      // node.path is the full path (e.g., ".claude/skills/ai-sdk-v6/references/core-api.md")
-      // We need to extract "references/core-api.md"
+      // tree.path is the skill root (e.g., "skills/ansible")
+      // node.path is the full path (e.g., "skills/ansible/SKILL.md")
+      // We need to extract just "SKILL.md" (relative to skill root)
       let relativePath = node.path;
-      if (tree && tree.path && node.path.startsWith(tree.path + '/')) {
-        relativePath = node.path.slice(tree.path.length + 1);
+
+      if (tree) {
+        const treePath = tree.path || '';
+        const nodePath = node.path || '';
+
+        // Strip the tree root path prefix if present
+        if (treePath && nodePath.startsWith(treePath + '/')) {
+          relativePath = nodePath.slice(treePath.length + 1);
+        } else if (treePath && nodePath.startsWith(treePath)) {
+          // Handle case where node.path equals tree.path (root directory selected)
+          relativePath = nodePath.slice(treePath.length).replace(/^\//, '');
+        } else if (treePath && nodePath.includes('/')) {
+          // Fallback: if paths don't match but node has directory prefix,
+          // try to extract just the filename portion after the tree's directory name
+          const treeDir = treePath.split('/').pop() || '';
+          const nodePathParts = nodePath.split('/');
+          const treeDirIndex = nodePathParts.indexOf(treeDir);
+          if (treeDirIndex >= 0) {
+            relativePath = nodePathParts.slice(treeDirIndex + 1).join('/');
+          }
+        }
       }
+
+      // Ensure we don't send empty path
+      if (!relativePath && node.name) {
+        relativePath = node.name;
+      }
+
       const response = await api.getSkillFile(skillId, relativePath);
       setFileContent(response.content);
     } catch (error) {
