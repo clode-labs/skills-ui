@@ -60,7 +60,7 @@ export default function SkillDetail() {
   const handleDownload = () => {
     if (!skill) return
     // Direct download - the backend returns the ZIP file directly
-    const downloadUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8086'}/skills/${skill.full_id}/download`
+    const downloadUrl = api.downloadSkillUrl(skill.full_id)
     window.location.href = downloadUrl
   }
 

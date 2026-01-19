@@ -17,11 +17,20 @@ function formatCount(count: number): string {
   return count.toString()
 }
 
-function formatDate(dateString: string): string {
+function formatDate(dateString: string | null | undefined): string {
+  if (!dateString) return ''
+
   const date = new Date(dateString)
+
+  // Check for invalid date or unreasonably old dates (before year 2000)
+  if (isNaN(date.getTime()) || date.getFullYear() < 2000) return ''
+
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  // Handle future dates
+  if (diffDays < 0) return 'Just now'
 
   if (diffDays === 0) return 'Today'
   if (diffDays === 1) return 'Yesterday'
@@ -86,8 +95,12 @@ export default function SkillCard({ skill }: SkillCardProps) {
             {authorName && (
               <span className="font-medium text-slate-500">{authorName}</span>
             )}
-            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-            <span>{formatDate(publishDate)}</span>
+            {formatDate(publishDate) && (
+              <>
+                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                <span>{formatDate(publishDate)}</span>
+              </>
+            )}
             {skill.repo_stars !== undefined && skill.repo_stars > 0 && (
               <>
                 <span className="w-1 h-1 rounded-full bg-slate-300"></span>

@@ -1,63 +1,79 @@
-import type {
-  SkillListResponse,
-  SkillResponse,
-  CategoryListResponse,
-  TagListResponse,
-  ImportResponse,
-  ImportJobResponse,
-  ImportJobStatusResponse,
-  SkillWithVersionResponse,
-  AuthorResponse,
-  AuthorListResponse,
-  FileTreeResponse,
-  FileContentResponse,
-} from '../types'
-import { getAccessToken } from './auth'
+# API Route Restructure: Update API Paths
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8086'
+## Context
 
-interface FetchOptions extends RequestInit {
-  requiresAuth?: boolean
-}
+The skills-registry API routes are being restructured for consistent ingress routing:
+- **Public routes**: Moving from `/` to `/api/v1/*`
+- **Protected routes**: Moving from `/api/v1/*` to `/api/v1/me/*`
 
-// Fetch wrapper with optional auth support
-async function fetchAPI<T>(
-  endpoint: string,
-  options: FetchOptions = {},
-): Promise<T> {
-  const {
-    requiresAuth = false,
-    headers: customHeaders,
-    ...fetchOptions
-  } = options
+See full details in: `skills-registry/claude/tasks/api-route-restructure.md`
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(customHeaders as Record<string, string>),
-  }
+---
 
-  // Add auth header if required or if token is available
-  if (requiresAuth) {
-    const token = getAccessToken()
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`
-    }
-  }
+## Changes Required
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...fetchOptions,
-    headers,
-  })
+### File: `src/services/api.ts`
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error(error.error?.message || `API error: ${response.status}`)
-  }
+#### 1. Update `api` object (public routes)
 
-  return response.json()
-}
+**Current → New mapping:**
 
+```typescript
+// Skills
+`/skills`                    → `/api/v1/skills`
+`/skills/search`             → `/api/v1/skills/search`
+`/skills/featured`           → `/api/v1/skills/featured`
+`/skills/${...}`             → `/api/v1/skills/${...}`
+`/skills/${...}/tree`        → `/api/v1/skills/${...}/tree`
+`/skills/${...}/file`        → `/api/v1/skills/${...}/file`
+`/skills/${...}/markdown`    → `/api/v1/skills/${...}/markdown`
+`/skills/${...}/download`    → `/api/v1/skills/${...}/download`
+
+// Categories & Tags
+`/categories`                → `/api/v1/categories`
+`/tags`                      → `/api/v1/tags`
+
+// Authors
+`/authors`                   → `/api/v1/authors`
+`/authors/${slug}`           → `/api/v1/authors/${slug}`
+`/authors/${slug}/skills`    → `/api/v1/authors/${slug}/skills`
+
+// Import
+`/import`                    → `/api/v1/import`
+`/import/jobs/${id}`         → `/api/v1/import/jobs/${id}`
+```
+
+#### 2. Update `authApi` object (protected routes)
+
+**Current → New mapping:**
+
+```typescript
+// Skills
+`/api/v1/skills`             → `/api/v1/me/skills`
+`/api/v1/skills/search`      → `/api/v1/me/skills/search`
+`/api/v1/skills/featured`    → `/api/v1/me/skills/featured`
+`/api/v1/skills/private`     → `/api/v1/me/skills/private`
+`/api/v1/skills/${...}`      → `/api/v1/me/skills/${...}`
+
+// Import
+`/api/v1/import`             → `/api/v1/me/import`
+`/api/v1/import/jobs/${id}`  → `/api/v1/me/import/jobs/${id}`
+
+// Categories & Tags
+`/api/v1/categories`         → `/api/v1/me/categories`
+`/api/v1/tags`               → `/api/v1/me/tags`
+
+// Profile
+`/api/v1/me`                 → `/api/v1/me/profile`
+```
+
+---
+
+## Implementation
+
+Replace all paths in `src/services/api.ts`:
+
+```typescript
 // Public API - no auth required
 export const api = {
   getSkills: (params?: Record<string, string>) => {
@@ -217,3 +233,14 @@ export const authApi = {
     )
   },
 }
+```
+
+---
+
+## Verification
+
+1. Ensure skills-registry changes are deployed first
+2. Run `npm run dev` locally
+3. Test public endpoints work without auth
+4. Test authenticated endpoints work with login
+5. Deploy to dev and verify against `https://api.clode.space/skills-registry/`
