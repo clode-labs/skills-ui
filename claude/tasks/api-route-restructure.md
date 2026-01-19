@@ -3,6 +3,7 @@
 ## Context
 
 The skills-registry API routes are being restructured for consistent ingress routing:
+
 - **Public routes**: Moving from `/` to `/api/v1/*`
 - **Protected routes**: Moving from `/api/v1/*` to `/api/v1/me/*`
 
@@ -113,7 +114,9 @@ export const api = {
   },
 
   getAuthors: (page = 1, limit = 20) => {
-    return fetchAPI<AuthorListResponse>(`/api/v1/authors?page=${page}&limit=${limit}`)
+    return fetchAPI<AuthorListResponse>(
+      `/api/v1/authors?page=${page}&limit=${limit}`,
+    )
   },
 
   getAuthor: (slug: string) => {
@@ -208,9 +211,12 @@ export const authApi = {
   },
 
   getJobStatus: (jobId: string) => {
-    return fetchAPI<ImportJobStatusResponse>(`/api/v1/me/import/jobs/${jobId}`, {
-      requiresAuth: true,
-    })
+    return fetchAPI<ImportJobStatusResponse>(
+      `/api/v1/me/import/jobs/${jobId}`,
+      {
+        requiresAuth: true,
+      },
+    )
   },
 
   getCategories: () => {

@@ -97,7 +97,9 @@ export const api = {
   },
 
   getAuthors: (page = 1, limit = 20) => {
-    return fetchAPI<AuthorListResponse>(`/api/v1/authors?page=${page}&limit=${limit}`)
+    return fetchAPI<AuthorListResponse>(
+      `/api/v1/authors?page=${page}&limit=${limit}`,
+    )
   },
 
   getAuthor: (slug: string) => {
@@ -192,9 +194,12 @@ export const authApi = {
   },
 
   getJobStatus: (jobId: string) => {
-    return fetchAPI<ImportJobStatusResponse>(`/api/v1/me/import/jobs/${jobId}`, {
-      requiresAuth: true,
-    })
+    return fetchAPI<ImportJobStatusResponse>(
+      `/api/v1/me/import/jobs/${jobId}`,
+      {
+        requiresAuth: true,
+      },
+    )
   },
 
   getCategories: () => {
