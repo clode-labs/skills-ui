@@ -133,18 +133,29 @@ export default function Import() {
     <div className="bg-slate-50 dark:bg-[#0f172a] min-h-screen">
       {/* Content */}
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-2 text-slate-900 dark:text-white">Submit a Skill</h1>
+        <h1 className="text-2xl font-bold mb-2 text-slate-900 dark:text-white">
+          Submit a Skill
+        </h1>
         <p className="text-slate-600 dark:text-slate-400 mb-6">
           Enter a GitHub repository URL to import skills. The repository should
-          contain a <code className="bg-slate-200 dark:bg-slate-700 px-1 rounded text-slate-700 dark:text-slate-300">skills/</code>{' '}
+          contain a{' '}
+          <code className="bg-slate-200 dark:bg-slate-700 px-1 rounded text-slate-700 dark:text-slate-300">
+            skills/
+          </code>{' '}
           folder with skill subfolders containing{' '}
-          <code className="bg-slate-200 dark:bg-slate-700 px-1 rounded text-slate-700 dark:text-slate-300">SKILL.md</code> files.
+          <code className="bg-slate-200 dark:bg-slate-700 px-1 rounded text-slate-700 dark:text-slate-300">
+            SKILL.md
+          </code>{' '}
+          files.
         </p>
 
         {/* Sign-in prompt for unauthenticated users */}
         {!isAuthenticated ? (
           <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-lg p-6 text-center">
-            <LogIn className="mx-auto text-slate-400 dark:text-slate-500 mb-4" size={48} />
+            <LogIn
+              className="mx-auto text-slate-400 dark:text-slate-500 mb-4"
+              size={48}
+            />
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
               Sign in to import skills
             </h2>
@@ -314,7 +325,10 @@ export default function Import() {
                 {result.imported?.length > 0 && (
                   <div className="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="text-emerald-600 dark:text-emerald-400" size={20} />
+                      <CheckCircle
+                        className="text-emerald-600 dark:text-emerald-400"
+                        size={20}
+                      />
                       <h3 className="font-semibold text-emerald-700 dark:text-emerald-300">
                         Successfully imported {result.imported.length} skill(s)
                       </h3>
@@ -334,7 +348,10 @@ export default function Import() {
                 {result.rejected?.length > 0 && (
                   <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <AlertCircle className="text-amber-600 dark:text-amber-400" size={20} />
+                      <AlertCircle
+                        className="text-amber-600 dark:text-amber-400"
+                        size={20}
+                      />
                       <h3 className="font-semibold text-amber-700 dark:text-amber-300">
                         {result.rejected.length} item(s) could not be imported
                       </h3>
@@ -355,19 +372,29 @@ export default function Import() {
 
         {/* Help text */}
         <div className="mt-8 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-lg p-4">
-          <h3 className="font-semibold mb-2 text-slate-900 dark:text-white">Supported URL formats:</h3>
+          <h3 className="font-semibold mb-2 text-slate-900 dark:text-white">
+            Supported URL formats:
+          </h3>
           <ul className="list-disc list-inside text-slate-600 dark:text-slate-400 space-y-1">
             <li>
-              <code className="text-slate-700 dark:text-slate-300">owner/repo</code>
+              <code className="text-slate-700 dark:text-slate-300">
+                owner/repo
+              </code>
             </li>
             <li>
-              <code className="text-slate-700 dark:text-slate-300">owner/repo/custom-skills-path</code>
+              <code className="text-slate-700 dark:text-slate-300">
+                owner/repo/custom-skills-path
+              </code>
             </li>
             <li>
-              <code className="text-slate-700 dark:text-slate-300">https://github.com/owner/repo</code>
+              <code className="text-slate-700 dark:text-slate-300">
+                https://github.com/owner/repo
+              </code>
             </li>
             <li>
-              <code className="text-slate-700 dark:text-slate-300">https://github.com/owner/repo/tree/main/skills</code>
+              <code className="text-slate-700 dark:text-slate-300">
+                https://github.com/owner/repo/tree/main/skills
+              </code>
             </li>
           </ul>
         </div>

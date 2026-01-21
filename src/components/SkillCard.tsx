@@ -99,7 +99,9 @@ export default function SkillCard({ skill }: SkillCardProps) {
           {/* Metadata */}
           <div className="flex items-center gap-3 text-[12px] text-slate-500">
             {authorName && (
-              <span className="font-medium text-slate-600 dark:text-slate-400">{authorName}</span>
+              <span className="font-medium text-slate-600 dark:text-slate-400">
+                {authorName}
+              </span>
             )}
             {formatDate(publishDate) && (
               <>

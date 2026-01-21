@@ -26,7 +26,11 @@ export function generateSessionId(): string {
  * @param isSignUp - Whether this is a signup flow
  * @param redirectPath - Optional path to redirect to after auth (e.g., /import)
  */
-export function buildLoginUrl(callbackUrl: string, isSignUp = false, redirectPath?: string): string {
+export function buildLoginUrl(
+  callbackUrl: string,
+  isSignUp = false,
+  redirectPath?: string,
+): string {
   const sessionId = generateSessionId()
 
   // Store session ID for verification on callback

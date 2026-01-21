@@ -300,7 +300,9 @@ export default function SkillDetail() {
         {/* Header Section */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{skill.name}</h1>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+              {skill.name}
+            </h1>
             {skill.is_private ? (
               <span className="flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 text-xs font-medium rounded">
                 <Lock size={12} />
@@ -313,7 +315,9 @@ export default function SkillDetail() {
             )}
           </div>
           <div className="flex items-center gap-2 text-sm text-slate-500">
-            <span className="font-medium text-slate-700 dark:text-slate-300">1.0.0</span>
+            <span className="font-medium text-slate-700 dark:text-slate-300">
+              1.0.0
+            </span>
             <span>•</span>
             <span>Published {formatDate(skill.created_at)}</span>
           </div>
@@ -535,7 +539,10 @@ export default function SkillDetail() {
                   title="Copy command"
                 >
                   {copied ? (
-                    <Check size={14} className="text-emerald-500 dark:text-emerald-400" />
+                    <Check
+                      size={14}
+                      className="text-emerald-500 dark:text-emerald-400"
+                    />
                   ) : (
                     <Copy size={14} className="text-slate-500" />
                   )}

@@ -39,7 +39,14 @@ const Home = () => {
     if (!isLandingView) {
       loadData()
     }
-  }, [searchQuery, activeFilter, selectedCategory, currentPage, isLandingView, isAuthenticated])
+  }, [
+    searchQuery,
+    activeFilter,
+    selectedCategory,
+    currentPage,
+    isLandingView,
+    isAuthenticated,
+  ])
 
   const loadData = async () => {
     try {
