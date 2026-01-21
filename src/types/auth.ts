@@ -15,8 +15,8 @@ export interface AuthState {
 }
 
 export interface AuthContextType extends AuthState {
-  signIn: () => void
-  signUp: () => void
+  signIn: (redirectPath?: string) => void
+  signUp: (redirectPath?: string) => void
   signOut: () => void
   refreshAccessToken: () => Promise<boolean>
   setCredentials: (

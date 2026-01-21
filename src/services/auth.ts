@@ -2,6 +2,8 @@ import type { Credentials, User } from '../types/auth'
 
 const AUTH_URL =
   import.meta.env.VITE_AUTH_URL || 'https://auth.clode.space/auth'
+const AUTH_BASE_URL =
+  import.meta.env.VITE_AUTH_BASE_URL || 'https://auth.clode.space'
 const WEBAPP_URL = import.meta.env.VITE_WEBAPP_URL || 'https://app.clode.space'
 
 // Storage keys
@@ -20,18 +22,33 @@ export function generateSessionId(): string {
 
 /**
  * Build the login URL for web-app redirect
+ * @param callbackUrl - The base callback URL (e.g., http://localhost:5173/auth/callback)
+ * @param isSignUp - Whether this is a signup flow
+ * @param redirectPath - Optional path to redirect to after auth (e.g., /import)
  */
-export function buildLoginUrl(callbackUrl: string, isSignUp = false): string {
+export function buildLoginUrl(
+  callbackUrl: string,
+  isSignUp = false,
+  redirectPath?: string,
+): string {
   const sessionId = generateSessionId()
 
   // Store session ID for verification on callback
   sessionStorage.setItem('auth_session_id', sessionId)
 
+  // If redirectPath is provided, encode it in the callback URL
+  let finalCallbackUrl = callbackUrl
+  if (redirectPath) {
+    const callbackUrlObj = new URL(callbackUrl)
+    callbackUrlObj.searchParams.set('redirect', redirectPath)
+    finalCallbackUrl = callbackUrlObj.toString()
+  }
+
   const path = isSignUp ? '/signup' : '/login'
   const url = new URL(path, WEBAPP_URL)
   url.searchParams.set('sessionId', sessionId)
   url.searchParams.set('initiator', 'skills-ui')
-  url.searchParams.set('callback', callbackUrl)
+  url.searchParams.set('callback', finalCallbackUrl)
 
   return url.toString()
 }
@@ -116,7 +133,7 @@ export async function revokeTokens(
   refreshToken: string,
 ): Promise<void> {
   try {
-    await fetch(`${AUTH_URL}/revoke-token`, {
+    await fetch(`${AUTH_BASE_URL}/api/v1/user/logout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
