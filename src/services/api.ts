@@ -221,4 +221,24 @@ export const authApi = {
       { requiresAuth: true },
     )
   },
+
+  getSkillTree: (skillId: string) => {
+    // Use public endpoint with auth header (no /me/ version exists)
+    return fetchAPI<FileTreeResponse>(`/api/v1/skills/${skillId}/tree`, {
+      requiresAuth: true,
+    })
+  },
+
+  getSkillFile: (skillId: string, path: string) => {
+    // Use public endpoint with auth header (no /me/ version exists)
+    return fetchAPI<FileContentResponse>(
+      `/api/v1/skills/${skillId}/file?path=${encodeURIComponent(path)}`,
+      { requiresAuth: true },
+    )
+  },
+
+  downloadSkillUrl: (skillId: string) => {
+    // Note: download URL can't include auth header, user needs to be authenticated via cookie or other mechanism
+    return `${API_BASE_URL}/api/v1/skills/${skillId}/download`
+  },
 }

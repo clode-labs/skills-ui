@@ -1,9 +1,12 @@
-import { Search, Plus, Lock } from 'lucide-react'
+import { Search, Lock } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 
-import { api } from '../services/api'
+import { api, authApi } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
+import ThemeToggle from './ThemeToggle'
+import clodeLogo from '../assets/images/clode_logo.png'
 import type { Skill } from '../types'
 
 interface HeaderProps {
@@ -19,6 +22,7 @@ const Header = ({ onSearch }: HeaderProps) => {
   const searchRef = useRef<HTMLDivElement>(null)
   const { user, isAuthenticated, isLoading, signIn, signUp, signOut } =
     useAuth()
+  const { resolvedTheme } = useTheme()
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -41,7 +45,9 @@ const Header = ({ onSearch }: HeaderProps) => {
       }
       setLoading(true)
       try {
-        const response = await api.searchSkills(searchQuery)
+        // Use authenticated search when logged in to include private skills
+        const searchApi = isAuthenticated ? authApi : api
+        const response = await searchApi.searchSkills(searchQuery)
         setSuggestions(response.data.slice(0, 5))
       } catch (error) {
         console.error('Search error:', error)
@@ -52,7 +58,7 @@ const Header = ({ onSearch }: HeaderProps) => {
 
     const debounce = setTimeout(fetchSuggestions, 300)
     return () => clearTimeout(debounce)
-  }, [searchQuery])
+  }, [searchQuery, isAuthenticated])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,23 +73,25 @@ const Header = ({ onSearch }: HeaderProps) => {
   }
 
   return (
-    <header className="bg-black sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 py-2">
+    <header className="bg-white dark:bg-black sticky top-0 z-50 border-b border-slate-200 dark:border-transparent">
+      <div className="max-w-6xl mx-auto px-4 py-3">
         <div className="flex items-center gap-4">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 shrink-0">
-            <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
-              <span className="text-black font-bold text-sm">as</span>
-            </div>
+            <img
+              src={clodeLogo}
+              alt="Clode"
+              className={`w-9 h-9 ${resolvedTheme === 'light' ? 'invert' : ''}`}
+            />
           </Link>
 
-          {/* Search Bar */}
+          {/* Search Bar - npm style large */}
           <div ref={searchRef} className="flex-1 relative">
             <form onSubmit={handleSearch}>
               <div className="relative">
                 <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={16}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                  size={18}
                 />
                 <input
                   type="text"
@@ -94,7 +102,7 @@ const Header = ({ onSearch }: HeaderProps) => {
                     setShowSuggestions(true)
                   }}
                   onFocus={() => setShowSuggestions(true)}
-                  className="w-full pl-9 pr-4 py-1.5 bg-white border-0 rounded text-sm focus:outline-none focus:ring-2 focus:ring-white text-gray-900"
+                  className="w-full pl-11 pr-4 py-2.5 bg-slate-100 dark:bg-white border border-slate-300 dark:border-0 rounded text-base focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-white text-gray-900 placeholder-gray-400"
                 />
               </div>
             </form>
@@ -113,8 +121,14 @@ const Header = ({ onSearch }: HeaderProps) => {
                           onClick={() => setShowSuggestions(false)}
                           className="block px-4 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
                         >
-                          <div className="font-medium text-sm text-gray-900">
+                          <div className="flex items-center gap-2 font-medium text-sm text-gray-900">
                             {skill.name}
+                            {skill.is_private && (
+                              <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-medium rounded">
+                                <Lock size={10} />
+                                Private
+                              </span>
+                            )}
                           </div>
                           <div className="text-xs text-gray-500 truncate">
                             {skill.description}
@@ -134,26 +148,12 @@ const Header = ({ onSearch }: HeaderProps) => {
 
           {/* Links */}
           <div className="flex items-center gap-3 shrink-0 text-sm">
-            <Link
-              to="/import"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white rounded font-medium hover:bg-emerald-600 transition-colors"
-            >
-              <Plus size={16} />
-              Submit Skill
-            </Link>
-
+            <ThemeToggle />
             {isLoading ? (
-              <div className="w-20 h-8 bg-gray-700 animate-pulse rounded"></div>
+              <div className="w-20 h-8 bg-slate-200 dark:bg-gray-700 animate-pulse rounded"></div>
             ) : isAuthenticated && user ? (
               // Authenticated user menu
               <div className="flex items-center gap-3">
-                <Link
-                  to="/my-skills"
-                  className="flex items-center gap-1.5 text-white/80 hover:text-white transition-colors"
-                >
-                  <Lock size={14} />
-                  My Skills
-                </Link>
                 <div className="flex items-center gap-2">
                   {user.avatar_url ? (
                     <img
@@ -162,21 +162,21 @@ const Header = ({ onSearch }: HeaderProps) => {
                       className="w-8 h-8 rounded-full"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
-                      <span className="text-sm font-medium text-white">
+                    <div className="w-8 h-8 rounded-full bg-slate-300 dark:bg-gray-600 flex items-center justify-center">
+                      <span className="text-sm font-medium text-slate-700 dark:text-white">
                         {user.name?.charAt(0).toUpperCase() ||
                           user.email?.charAt(0).toUpperCase() ||
                           'U'}
                       </span>
                     </div>
                   )}
-                  <span className="text-white/80 text-sm hidden md:block">
+                  <span className="text-slate-700 dark:text-white/80 text-sm hidden md:block">
                     {user.name || user.email}
                   </span>
                 </div>
                 <button
                   onClick={signOut}
-                  className="text-white/60 hover:text-white text-sm transition-colors"
+                  className="text-slate-500 dark:text-white/60 hover:text-slate-900 dark:hover:text-white text-sm transition-colors"
                 >
                   Sign Out
                 </button>
@@ -185,14 +185,14 @@ const Header = ({ onSearch }: HeaderProps) => {
               // Guest buttons
               <>
                 <button
-                  onClick={signIn}
-                  className="text-white/80 hover:text-white transition-colors"
+                  onClick={() => signIn()}
+                  className="text-slate-700 dark:text-white/80 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
                   Sign In
                 </button>
                 <button
-                  onClick={signUp}
-                  className="px-3 py-1.5 bg-white text-black rounded font-medium hover:bg-gray-100 transition-colors"
+                  onClick={() => signUp()}
+                  className="px-3 py-1.5 bg-slate-900 dark:bg-white text-white dark:text-black rounded font-medium hover:bg-slate-800 dark:hover:bg-gray-100 transition-colors"
                 >
                   Sign Up
                 </button>

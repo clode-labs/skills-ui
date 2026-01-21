@@ -44,8 +44,15 @@ export default function AuthCallback() {
           credentials.refreshToken,
         )
 
-        // Redirect to home
-        navigate('/', { replace: true })
+        // Check for redirect path in URL params first, then sessionStorage
+        const redirectFromUrl = searchParams.get('redirect')
+        const redirectFromStorage = sessionStorage.getItem('authRedirect')
+        sessionStorage.removeItem('authRedirect')
+
+        const redirectPath = redirectFromUrl || redirectFromStorage
+
+        // Redirect to stored path or home
+        navigate(redirectPath || '/', { replace: true })
       } catch (err) {
         console.error('Auth callback error:', err)
         setError(err instanceof Error ? err.message : 'Authentication failed')
@@ -60,13 +67,13 @@ export default function AuthCallback() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center max-w-md p-6">
           <div className="text-red-500 text-5xl mb-4">!</div>
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
             Authentication Failed
           </h1>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <p className="text-slate-600 dark:text-slate-400 mb-4">{error}</p>
           <button
             onClick={() => navigate('/signin')}
-            className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
+            className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded hover:bg-slate-800 dark:hover:bg-slate-100"
           >
             Try Again
           </button>
@@ -78,8 +85,8 @@ export default function AuthCallback() {
   return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Completing sign in...</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 dark:border-white mx-auto"></div>
+        <p className="mt-4 text-slate-600 dark:text-slate-400">Completing sign in...</p>
       </div>
     </div>
   )

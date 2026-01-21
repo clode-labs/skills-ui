@@ -64,15 +64,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const signIn = useCallback(() => {
+  const signIn = useCallback((redirectPath?: string) => {
     const callbackUrl = `${window.location.origin}/auth/callback`
-    const loginUrl = authService.buildLoginUrl(callbackUrl, false)
+    const loginUrl = authService.buildLoginUrl(callbackUrl, false, redirectPath)
     window.location.href = loginUrl
   }, [])
 
-  const signUp = useCallback(() => {
+  const signUp = useCallback((redirectPath?: string) => {
     const callbackUrl = `${window.location.origin}/auth/callback`
-    const loginUrl = authService.buildLoginUrl(callbackUrl, true)
+    const loginUrl = authService.buildLoginUrl(callbackUrl, true, redirectPath)
     window.location.href = loginUrl
   }, [])
 

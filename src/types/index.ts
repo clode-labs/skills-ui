@@ -20,6 +20,7 @@ export interface Skill {
   updated_at: string
   published_at?: string
   tags?: string[]
+  is_private?: boolean
 
   // Author fields
   repo_id?: string
