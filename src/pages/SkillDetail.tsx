@@ -729,7 +729,6 @@ export default function SkillDetail() {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>

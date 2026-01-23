@@ -30,7 +30,8 @@ const Home = () => {
   const [selectedAuthor, setSelectedAuthor] = useState(authorFromUrl)
 
   // Determine if we're on the "landing" view (no search, no category, no tags, no author)
-  const isLandingView = !searchQuery && !categoryFromUrl && !tagsFromUrl && !authorFromUrl
+  const isLandingView =
+    !searchQuery && !categoryFromUrl && !tagsFromUrl && !authorFromUrl
 
   // Sync with URL params
   useEffect(() => {
@@ -71,7 +72,11 @@ const Home = () => {
         skillsResponse = await api.getFeaturedSkills()
       } else if (selectedAuthor) {
         // Use author skills endpoint when filtering by author
-        skillsResponse = await api.getAuthorSkills(selectedAuthor, currentPage, ITEMS_PER_PAGE)
+        skillsResponse = await api.getAuthorSkills(
+          selectedAuthor,
+          currentPage,
+          ITEMS_PER_PAGE,
+        )
       } else {
         // Use unified search endpoint for all queries (search, category, tag filters)
         const searchApi = isAuthenticated ? authApi : api
@@ -251,8 +256,8 @@ const Home = () => {
             <h2 className="text-[15px] font-semibold text-slate-900 dark:text-white">
               {searchQuery ? (
                 <>
-                  {totalSkills} {totalSkills === 1 ? 'skill' : 'skills'} found for
-                  "{searchQuery}"
+                  {totalSkills} {totalSkills === 1 ? 'skill' : 'skills'} found
+                  for "{searchQuery}"
                 </>
               ) : activeFilter === 'featured' ? (
                 'Featured Skills'
