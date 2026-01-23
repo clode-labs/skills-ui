@@ -65,12 +65,21 @@ export const api = {
     return fetchAPI<SkillListResponse>(`/api/v1/skills${query}`)
   },
 
-  searchSkills: (query: string, page = 1, limit = 20) => {
-    const params = new URLSearchParams({
-      q: query,
-      page: page.toString(),
-      limit: limit.toString(),
-    })
+  searchSkills: (options: {
+    q?: string
+    category?: string
+    tag?: string
+    author?: string
+    page?: number
+    limit?: number
+  }) => {
+    const params = new URLSearchParams()
+    if (options.q) params.set('q', options.q)
+    if (options.category) params.set('category', options.category)
+    if (options.tag) params.set('tag', options.tag)
+    if (options.author) params.set('author', options.author)
+    params.set('page', (options.page || 1).toString())
+    params.set('limit', (options.limit || 20).toString())
     return fetchAPI<SkillListResponse>(`/api/v1/skills/search?${params}`)
   },
 
@@ -151,12 +160,21 @@ export const authApi = {
     })
   },
 
-  searchSkills: (query: string, page = 1, limit = 20) => {
-    const params = new URLSearchParams({
-      q: query,
-      page: page.toString(),
-      limit: limit.toString(),
-    })
+  searchSkills: (options: {
+    q?: string
+    category?: string
+    tag?: string
+    author?: string
+    page?: number
+    limit?: number
+  }) => {
+    const params = new URLSearchParams()
+    if (options.q) params.set('q', options.q)
+    if (options.category) params.set('category', options.category)
+    if (options.tag) params.set('tag', options.tag)
+    if (options.author) params.set('author', options.author)
+    params.set('page', (options.page || 1).toString())
+    params.set('limit', (options.limit || 20).toString())
     return fetchAPI<SkillListResponse>(`/api/v1/me/skills/search?${params}`, {
       requiresAuth: true,
     })
