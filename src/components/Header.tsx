@@ -47,7 +47,7 @@ const Header = ({ onSearch }: HeaderProps) => {
       try {
         // Use authenticated search when logged in to include private skills
         const searchApi = isAuthenticated ? authApi : api
-        const response = await searchApi.searchSkills(searchQuery)
+        const response = await searchApi.searchSkills({ q: searchQuery })
         setSuggestions(response.data.slice(0, 5))
       } catch (error) {
         console.error('Search error:', error)

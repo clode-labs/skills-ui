@@ -22,17 +22,24 @@ const Home = () => {
 
   const searchQuery = searchParams.get('search') || ''
   const categoryFromUrl = searchParams.get('category') || ''
+  const tagsFromUrl = searchParams.get('tags') || ''
+  const authorFromUrl = searchParams.get('author') || ''
   const pageFromUrl = parseInt(searchParams.get('page') || '1', 10)
   const [selectedCategory, setSelectedCategory] = useState(categoryFromUrl)
+  const [selectedTags, setSelectedTags] = useState(tagsFromUrl)
+  const [selectedAuthor, setSelectedAuthor] = useState(authorFromUrl)
 
-  // Determine if we're on the "landing" view (no search, no category)
-  const isLandingView = !searchQuery && !categoryFromUrl
+  // Determine if we're on the "landing" view (no search, no category, no tags, no author)
+  const isLandingView =
+    !searchQuery && !categoryFromUrl && !tagsFromUrl && !authorFromUrl
 
   // Sync with URL params
   useEffect(() => {
     setSelectedCategory(categoryFromUrl)
+    setSelectedTags(tagsFromUrl)
+    setSelectedAuthor(authorFromUrl)
     setCurrentPage(pageFromUrl)
-  }, [categoryFromUrl, pageFromUrl])
+  }, [categoryFromUrl, tagsFromUrl, authorFromUrl, pageFromUrl])
 
   // Only load data when NOT on landing view
   useEffect(() => {
@@ -43,6 +50,8 @@ const Home = () => {
     searchQuery,
     activeFilter,
     selectedCategory,
+    selectedTags,
+    selectedAuthor,
     currentPage,
     isLandingView,
     isAuthenticated,
@@ -59,27 +68,25 @@ const Home = () => {
       // Load skills based on filters
       // Use authenticated search when logged in to include private skills
       let skillsResponse
-      if (searchQuery) {
-        const searchApi = isAuthenticated ? authApi : api
-        skillsResponse = await searchApi.searchSkills(
-          searchQuery,
+      if (activeFilter === 'featured') {
+        skillsResponse = await api.getFeaturedSkills()
+      } else if (selectedAuthor) {
+        // Use author skills endpoint when filtering by author
+        skillsResponse = await api.getAuthorSkills(
+          selectedAuthor,
           currentPage,
           ITEMS_PER_PAGE,
         )
-      } else if (activeFilter === 'featured') {
-        skillsResponse = await api.getFeaturedSkills()
       } else {
-        const params: Record<string, string> = {
-          page: currentPage.toString(),
-          limit: ITEMS_PER_PAGE.toString(),
-        }
-        if (activeFilter !== 'all') {
-          params.status = activeFilter
-        }
-        if (selectedCategory) {
-          params.category = selectedCategory
-        }
-        skillsResponse = await api.getSkills(params)
+        // Use unified search endpoint for all queries (search, category, tag filters)
+        const searchApi = isAuthenticated ? authApi : api
+        skillsResponse = await searchApi.searchSkills({
+          q: searchQuery || undefined,
+          category: selectedCategory || undefined,
+          tag: selectedTags || undefined,
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
+        })
       }
 
       setSkills(skillsResponse.data)
@@ -113,15 +120,35 @@ const Home = () => {
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category)
+    setSelectedTags('')
     setActiveFilter('all')
     setCurrentPage(1)
     const params = new URLSearchParams(searchParams)
     params.delete('page')
+    params.delete('tags')
     if (category) {
       params.set('category', category)
     } else {
       params.delete('category')
     }
+    setSearchParams(params)
+  }
+
+  const clearTagFilter = () => {
+    setSelectedTags('')
+    setCurrentPage(1)
+    const params = new URLSearchParams(searchParams)
+    params.delete('page')
+    params.delete('tags')
+    setSearchParams(params)
+  }
+
+  const clearAuthorFilter = () => {
+    setSelectedAuthor('')
+    setCurrentPage(1)
+    const params = new URLSearchParams(searchParams)
+    params.delete('page')
+    params.delete('author')
     setSearchParams(params)
   }
 
@@ -225,20 +252,42 @@ const Home = () => {
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Header with count and filters */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-[15px] font-semibold text-slate-900 dark:text-white">
-            {searchQuery ? (
-              <>
-                {totalSkills} {totalSkills === 1 ? 'skill' : 'skills'} found for
-                "{searchQuery}"
-              </>
-            ) : activeFilter === 'featured' ? (
-              'Featured Skills'
-            ) : selectedCategory ? (
-              `${selectedCategory} Skills`
-            ) : (
-              `${totalSkills} skills`
+          <div className="flex items-center gap-2">
+            <h2 className="text-[15px] font-semibold text-slate-900 dark:text-white">
+              {searchQuery ? (
+                <>
+                  {totalSkills} {totalSkills === 1 ? 'skill' : 'skills'} found
+                  for "{searchQuery}"
+                </>
+              ) : activeFilter === 'featured' ? (
+                'Featured Skills'
+              ) : selectedAuthor ? (
+                `Skills by ${selectedAuthor}`
+              ) : selectedCategory ? (
+                `${selectedCategory} Skills`
+              ) : selectedTags ? (
+                `Skills tagged "${selectedTags}"`
+              ) : (
+                `${totalSkills} skills`
+              )}
+            </h2>
+            {selectedTags && (
+              <button
+                onClick={clearTagFilter}
+                className="text-[12px] px-2 py-1 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+              >
+                Clear tag
+              </button>
             )}
-          </h2>
+            {selectedAuthor && (
+              <button
+                onClick={clearAuthorFilter}
+                className="text-[12px] px-2 py-1 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+              >
+                Clear author
+              </button>
+            )}
+          </div>
 
           <div className="flex items-center gap-2">
             <select

@@ -550,6 +550,47 @@ export default function SkillDetail() {
               </div>
             </div>
 
+            {/* Category Section */}
+            {(skill.category || skill.category_name || skill.category_slug) && (
+              <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">
+                <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                  Category
+                </h3>
+                <Link
+                  to={`/skills?category=${skill.category_slug || skill.category}`}
+                  className="inline-flex items-center px-2.5 py-1 bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300 text-xs rounded-md font-medium hover:bg-violet-200 dark:hover:bg-violet-800/50 transition-colors"
+                >
+                  {skill.category || skill.category_name || skill.category_slug}
+                </Link>
+                <Link
+                  to={`/skills?category=${skill.category_slug || skill.category}`}
+                  className="block mt-2 text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 font-medium"
+                >
+                  View all skills →
+                </Link>
+              </div>
+            )}
+
+            {/* Tags Section */}
+            {skill.tags && skill.tags.length > 0 && (
+              <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">
+                <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                  Tags
+                </h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {skill.tags.map(tag => (
+                    <Link
+                      key={tag}
+                      to={`/skills?tags=${tag}`}
+                      className="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs rounded font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                    >
+                      {tag}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="space-y-2">
               <button
@@ -597,19 +638,7 @@ export default function SkillDetail() {
             {/* Stats Section */}
             <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">
               <div className="space-y-3">
-                {/* Weekly Downloads */}
-                {skill.download_count !== undefined && (
-                  <div>
-                    <div className="text-xs text-slate-500 mb-1">
-                      Weekly Downloads
-                    </div>
-                    <div className="text-lg font-bold text-slate-900 dark:text-white">
-                      {skill.download_count.toLocaleString()}
-                    </div>
-                  </div>
-                )}
-
-                <div className="border-t border-slate-200 dark:border-slate-700/50 pt-3 grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   {/* Version */}
                   <div>
                     <div className="text-xs text-slate-500">Version</div>
@@ -691,7 +720,7 @@ export default function SkillDetail() {
                   </p>
                   {skill.author_slug && (
                     <Link
-                      to={`/authors/${skill.author_slug}`}
+                      to={`/skills?author=${skill.author_slug}`}
                       className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 font-medium"
                     >
                       View all skills →
@@ -700,25 +729,6 @@ export default function SkillDetail() {
                 </div>
               </div>
             </div>
-
-            {/* Tags */}
-            {skill.tags && skill.tags.length > 0 && (
-              <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">
-                <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-                  Tags
-                </h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {skill.tags.map(tag => (
-                    <span
-                      key={tag}
-                      className="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs rounded font-medium hover:bg-slate-200 dark:hover:bg-slate-600 cursor-pointer transition-colors"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

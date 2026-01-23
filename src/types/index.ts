@@ -13,6 +13,7 @@ export interface Skill {
   category_id?: string
   category_slug?: string
   category_name?: string
+  category?: string
   status: 'draft' | 'pending' | 'approved' | 'featured' | 'archived'
   download_count: number
   star_count: number
