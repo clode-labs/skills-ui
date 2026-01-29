@@ -574,3 +574,194 @@
     font-size: 0.8125rem;
   }
 }
+
+/* Skill Mention Styles */
+.textareaWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.selectedSkills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+:global(.dark) .selectedSkills {
+  border-bottom-color: #334155;
+}
+
+.skillChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.625rem;
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  border: 1px solid #c4b5fd;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6d28d9;
+  transition: all 0.15s ease;
+}
+
+:global(.dark) .skillChip {
+  background: linear-gradient(
+    135deg,
+    rgba(124, 58, 237, 0.2) 0%,
+    rgba(109, 40, 217, 0.3) 100%
+  );
+  border-color: rgba(167, 139, 250, 0.4);
+  color: #c4b5fd;
+}
+
+.skillChip:hover {
+  background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%);
+  border-color: #a78bfa;
+}
+
+:global(.dark) .skillChip:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(124, 58, 237, 0.3) 0%,
+    rgba(109, 40, 217, 0.4) 100%
+  );
+  border-color: rgba(167, 139, 250, 0.6);
+}
+
+.skillChipAt {
+  color: #7c3aed;
+  font-weight: 600;
+}
+
+:global(.dark) .skillChipAt {
+  color: #a78bfa;
+}
+
+.skillChipRemove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.125rem;
+  margin-left: 0.25rem;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: #7c3aed;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+:global(.dark) .skillChipRemove {
+  color: #a78bfa;
+}
+
+.skillChipRemove:hover {
+  background: rgba(124, 58, 237, 0.2);
+  color: #5b21b6;
+}
+
+:global(.dark) .skillChipRemove:hover {
+  background: rgba(167, 139, 250, 0.2);
+  color: #c4b5fd;
+}
+
+.mentionDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  overflow: hidden;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+:global(.dark) .mentionDropdown {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+}
+
+.mentionLoading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  color: #64748b;
+  font-size: 0.9375rem;
+}
+
+:global(.dark) .mentionLoading {
+  color: #94a3b8;
+}
+
+.mentionEmpty {
+  padding: 1rem 1.25rem;
+  color: #64748b;
+  font-size: 0.9375rem;
+  text-align: center;
+}
+
+:global(.dark) .mentionEmpty {
+  color: #94a3b8;
+}
+
+.mentionList {
+  list-style: none;
+  margin: 0;
+  padding: 0.375rem;
+}
+
+.mentionItem {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: block;
+}
+
+.mentionItem:hover,
+.mentionItemActive {
+  background: #f1f5f9;
+}
+
+:global(.dark) .mentionItem:hover,
+:global(.dark) .mentionItemActive {
+  background: #334155;
+}
+
+.mentionItemName {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 0.25rem;
+}
+
+:global(.dark) .mentionItemName {
+  color: #f1f5f9;
+}
+
+.mentionItemDesc {
+  font-size: 0.8125rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:global(.dark) .mentionItemDesc {
+  color: #94a3b8;
+}
