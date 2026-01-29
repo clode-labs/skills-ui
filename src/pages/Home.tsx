@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import {
   Loader2,
@@ -11,6 +11,7 @@ import {
   Github,
   Send,
   Download,
+  X,
 } from 'lucide-react'
 
 import SkillGridCard from '../components/SkillGridCard'
@@ -43,6 +44,16 @@ const Home = () => {
   // Prompt section state
   const [promptMode, setPromptMode] = useState<PromptMode>('discover')
   const [promptValue, setPromptValue] = useState('')
+
+  // Skill mention state (for Build mode)
+  const [mentionQuery, setMentionQuery] = useState('')
+  const [showMentionDropdown, setShowMentionDropdown] = useState(false)
+  const [mentionSuggestions, setMentionSuggestions] = useState<Skill[]>([])
+  const [selectedSkills, setSelectedSkills] = useState<Skill[]>([])
+  const [mentionLoading, setMentionLoading] = useState(false)
+  const [mentionIndex, setMentionIndex] = useState(0)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const mentionDropdownRef = useRef<HTMLDivElement>(null)
 
   const searchQuery = searchParams.get('search') || ''
   const hasSearchParam = searchParams.has('search')
@@ -181,6 +192,108 @@ const Home = () => {
     }
   }
 
+  // Fetch skill suggestions for mentions
+  useEffect(() => {
+    if (!showMentionDropdown || mentionQuery.length < 1) {
+      setMentionSuggestions([])
+      return
+    }
+
+    const fetchMentionSuggestions = async () => {
+      setMentionLoading(true)
+      try {
+        const searchApi = isAuthenticated ? authApi : api
+        const response = await searchApi.searchSkills({ q: mentionQuery })
+        // Filter out already selected skills
+        const filtered = response.data.filter(
+          skill => !selectedSkills.some(s => s.id === skill.id),
+        )
+        setMentionSuggestions(filtered.slice(0, 8))
+      } catch (error) {
+        console.error('Error fetching mention suggestions:', error)
+      } finally {
+        setMentionLoading(false)
+      }
+    }
+
+    const debounce = setTimeout(fetchMentionSuggestions, 200)
+    return () => clearTimeout(debounce)
+  }, [mentionQuery, showMentionDropdown, isAuthenticated, selectedSkills])
+
+  // Close mention dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        mentionDropdownRef.current &&
+        !mentionDropdownRef.current.contains(e.target as Node) &&
+        textareaRef.current &&
+        !textareaRef.current.contains(e.target as Node)
+      ) {
+        setShowMentionDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Handle textarea change for @ mentions
+  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value
+    setPromptValue(value)
+
+    // Only handle mentions in Build mode
+    if (promptMode !== 'build') {
+      setShowMentionDropdown(false)
+      return
+    }
+
+    // Find if we're typing after an @
+    const cursorPos = e.target.selectionStart || 0
+    const textBeforeCursor = value.slice(0, cursorPos)
+    const atIndex = textBeforeCursor.lastIndexOf('@')
+
+    if (atIndex !== -1) {
+      const textAfterAt = textBeforeCursor.slice(atIndex + 1)
+      // Check if there's no space after @ (still typing the mention)
+      if (!textAfterAt.includes(' ') && !textAfterAt.includes('\n')) {
+        setMentionQuery(textAfterAt)
+        setShowMentionDropdown(true)
+        setMentionIndex(0)
+        return
+      }
+    }
+
+    setShowMentionDropdown(false)
+    setMentionQuery('')
+  }
+
+  // Select a skill from mention dropdown
+  const handleSelectMention = (skill: Skill) => {
+    // Add to selected skills
+    setSelectedSkills(prev => [...prev, skill])
+
+    // Remove the @query from the text
+    if (textareaRef.current) {
+      const cursorPos = textareaRef.current.selectionStart || 0
+      const textBeforeCursor = promptValue.slice(0, cursorPos)
+      const atIndex = textBeforeCursor.lastIndexOf('@')
+      const textAfterCursor = promptValue.slice(cursorPos)
+
+      const newValue =
+        promptValue.slice(0, atIndex) + textAfterCursor.trimStart()
+      setPromptValue(newValue)
+    }
+
+    setShowMentionDropdown(false)
+    setMentionQuery('')
+    textareaRef.current?.focus()
+  }
+
+  // Remove a selected skill
+  const handleRemoveSkill = (skillId: string) => {
+    setSelectedSkills(prev => prev.filter(s => s.id !== skillId))
+  }
+
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage)
     const params = new URLSearchParams(searchParams)
@@ -255,6 +368,34 @@ const Home = () => {
   }
 
   const handlePromptKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Handle mention dropdown navigation
+    if (showMentionDropdown && mentionSuggestions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setMentionIndex(prev =>
+          prev < mentionSuggestions.length - 1 ? prev + 1 : 0,
+        )
+        return
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setMentionIndex(prev =>
+          prev > 0 ? prev - 1 : mentionSuggestions.length - 1,
+        )
+        return
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault()
+        handleSelectMention(mentionSuggestions[mentionIndex])
+        return
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setShowMentionDropdown(false)
+        return
+      }
+    }
+
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handlePromptSubmit()
@@ -342,20 +483,84 @@ const Home = () => {
 
             {/* Input Container */}
             <div className={styles.inputContainer}>
-              <textarea
-                value={promptValue}
-                onChange={e => setPromptValue(e.target.value)}
-                onKeyDown={handlePromptKeyDown}
-                placeholder={
-                  promptMode === 'discover'
-                    ? 'Search for skills... e.g. "file management", "API integration"'
-                    : promptMode === 'build'
-                      ? 'Describe the skill you want to build...'
-                      : 'Paste a GitHub URL to import a skill...'
-                }
-                className={styles.promptInput}
-                rows={2}
-              />
+              {/* Selected Skills Chips (for Build mode) */}
+              {promptMode === 'build' && selectedSkills.length > 0 && (
+                <div className={styles.selectedSkills}>
+                  {selectedSkills.map(skill => (
+                    <span key={skill.id} className={styles.skillChip}>
+                      <span className={styles.skillChipAt}>@</span>
+                      {skill.name}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSkill(skill.id)}
+                        className={styles.skillChipRemove}
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className={styles.textareaWrapper}>
+                <textarea
+                  ref={textareaRef}
+                  value={promptValue}
+                  onChange={handlePromptChange}
+                  onKeyDown={handlePromptKeyDown}
+                  placeholder={
+                    promptMode === 'discover'
+                      ? 'Search for skills... e.g. "file management", "API integration"'
+                      : promptMode === 'build'
+                        ? 'Describe what you want to build... Type @ to mention skills'
+                        : 'Paste a GitHub URL to import a skill...'
+                  }
+                  className={styles.promptInput}
+                  rows={2}
+                />
+
+                {/* Mention Dropdown */}
+                {showMentionDropdown && promptMode === 'build' && (
+                  <div
+                    ref={mentionDropdownRef}
+                    className={styles.mentionDropdown}
+                  >
+                    {mentionLoading ? (
+                      <div className={styles.mentionLoading}>
+                        <Loader2 className="animate-spin" size={16} />
+                        <span>Searching skills...</span>
+                      </div>
+                    ) : mentionSuggestions.length > 0 ? (
+                      <ul className={styles.mentionList}>
+                        {mentionSuggestions.map((skill, index) => (
+                          <li key={skill.id}>
+                            <button
+                              type="button"
+                              onClick={() => handleSelectMention(skill)}
+                              className={`${styles.mentionItem} ${
+                                index === mentionIndex
+                                  ? styles.mentionItemActive
+                                  : ''
+                              }`}
+                            >
+                              <div className={styles.mentionItemName}>
+                                {skill.name}
+                              </div>
+                              <div className={styles.mentionItemDesc}>
+                                {skill.description}
+                              </div>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : mentionQuery.length > 0 ? (
+                      <div className={styles.mentionEmpty}>
+                        No skills found for "{mentionQuery}"
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </div>
               <div className={styles.inputActions}>
                 <div className={styles.inputActionsLeft}>
                   <button
