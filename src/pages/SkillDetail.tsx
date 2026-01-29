@@ -156,10 +156,7 @@ export default function SkillDetail() {
 
   const getInstallCommand = () => {
     if (!skill) return ''
-    const repoUrl =
-      skill.repo_url ||
-      `https://github.com/${skill.repo_owner}/${skill.repo_name}`
-    return `npx add-skill ${repoUrl}`
+    return `npx skills add ${skill.repo_owner}/${skill.repo_name}`
   }
 
   const copyInstallCommand = () => {
@@ -219,7 +216,7 @@ export default function SkillDetail() {
     return (
       <div className="bg-slate-50 dark:bg-[#0f172a] min-h-screen">
         <div className="border-b border-slate-200 dark:border-slate-700/50 bg-white dark:bg-[#0f172a]">
-          <div className="max-w-6xl mx-auto px-4">
+          <div className="max-w-7xl mx-auto px-4">
             <nav className="flex items-center gap-6">
               <Link
                 to="/skills"
@@ -241,7 +238,7 @@ export default function SkillDetail() {
     return (
       <div className="bg-slate-50 dark:bg-[#0f172a] min-h-screen">
         <div className="border-b border-slate-200 dark:border-slate-700/50 bg-white dark:bg-[#0f172a]">
-          <div className="max-w-6xl mx-auto px-4">
+          <div className="max-w-7xl mx-auto px-4">
             <nav className="flex items-center gap-6">
               <Link
                 to="/skills"
@@ -252,7 +249,7 @@ export default function SkillDetail() {
             </nav>
           </div>
         </div>
-        <div className="max-w-6xl mx-auto px-4 py-20 text-center">
+        <div className="max-w-7xl mx-auto px-4 py-20 text-center">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
             Skill Not Found
           </h2>
@@ -281,22 +278,39 @@ export default function SkillDetail() {
 
   return (
     <div className="bg-slate-50 dark:bg-[#0f172a] min-h-screen">
-      {/* Navigation Tabs */}
+      {/* Breadcrumb Navigation */}
       <div className="border-b border-slate-200 dark:border-slate-700/50 bg-white dark:bg-[#0f172a]">
-        <div className="max-w-6xl mx-auto px-4">
-          <nav className="flex items-center gap-1">
+        <div className="max-w-7xl mx-auto px-4">
+          <nav className="flex items-center gap-2 py-3 text-[14px]">
             <Link
-              to="/skills"
-              className="px-4 py-3 text-[13px] font-semibold text-slate-900 dark:text-white border-b-2 border-violet-500 -mb-px"
+              to="/skills?search="
+              className="text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
             >
               Skills
             </Link>
+            <ChevronRight
+              size={14}
+              className="text-slate-400 dark:text-slate-600"
+            />
+            <Link
+              to={`/skills?author=${skill.repo_owner}`}
+              className="text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+            >
+              {skill.repo_owner}/{skill.repo_name}
+            </Link>
+            <ChevronRight
+              size={14}
+              className="text-slate-400 dark:text-slate-600"
+            />
+            <span className="font-medium text-slate-900 dark:text-white">
+              {skill.name}
+            </span>
           </nav>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Header Section */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
@@ -344,10 +358,10 @@ export default function SkillDetail() {
           })}
         </div>
 
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Content Grid - npm style layout */}
+        <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content Area */}
-          <div className="lg:col-span-3">
+          <div className="flex-1 min-w-0 lg:max-w-[65%]">
             {activeTab === 'skill' && (
               <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-6">
                 {readmeLoading ? (
@@ -400,19 +414,21 @@ export default function SkillDetail() {
                           const isInline = !className
                           if (isInline) {
                             return (
-                              <code className="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-1.5 py-0.5 rounded text-sm font-mono">
+                              <code className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-1.5 py-0.5 rounded text-[13px] font-mono">
                                 {children}
                               </code>
                             )
                           }
                           return (
-                            <code className="block bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-4 rounded-lg overflow-x-auto text-sm font-mono">
+                            <code className="block text-[13px] font-mono leading-relaxed whitespace-pre-wrap">
                               {children}
                             </code>
                           )
                         },
                         pre: ({ children }) => (
-                          <pre className="mb-4">{children}</pre>
+                          <pre className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md p-4 overflow-x-auto mb-4 text-slate-800 dark:text-slate-200">
+                            {children}
+                          </pre>
                         ),
                         blockquote: ({ children }) => (
                           <blockquote className="border-l-4 border-slate-300 dark:border-slate-600 pl-4 italic text-slate-600 dark:text-slate-400 my-4">
@@ -523,19 +539,30 @@ export default function SkillDetail() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-4">
+          <div className="lg:w-[320px] xl:w-[360px] flex-shrink-0 space-y-4">
+            {/* Try with Aramb - Primary CTA at top */}
+            <a
+              href={`https://aramb.ai/try?skill=${encodeURIComponent(skill.full_id)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-all text-sm font-semibold shadow-sm"
+            >
+              <span>Try with Aramb</span>
+              <ExternalLink size={14} />
+            </a>
+
             {/* Install Section */}
             <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">
               <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
                 Install
               </h3>
-              <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 p-2.5">
-                <code className="flex-1 text-xs text-slate-700 dark:text-slate-300 font-mono truncate">
+              <div className="flex items-start gap-2 bg-slate-100 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+                <code className="flex-1 text-[13px] text-slate-700 dark:text-slate-300 font-mono break-all leading-relaxed">
                   {getInstallCommand()}
                 </code>
                 <button
                   onClick={copyInstallCommand}
-                  className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors flex-shrink-0"
+                  className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors flex-shrink-0 mt-0.5"
                   title="Copy command"
                 >
                   {copied ? (
@@ -549,6 +576,32 @@ export default function SkillDetail() {
                 </button>
               </div>
             </div>
+
+            {/* Repository Section */}
+            {skill.repo_owner && skill.repo_name && (
+              <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">
+                <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+                  Repository
+                </h3>
+                <a
+                  href={repoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+                >
+                  <svg
+                    className="w-4 h-4 flex-shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                  </svg>
+                  <span className="break-all">
+                    {skill.repo_owner}/{skill.repo_name}
+                  </span>
+                </a>
+              </div>
+            )}
 
             {/* Category Section */}
             {(skill.category || skill.category_name || skill.category_slug) && (
@@ -591,49 +644,14 @@ export default function SkillDetail() {
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="space-y-2">
-              <button
-                onClick={handleDownload}
-                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-all text-sm font-medium"
-              >
-                <Download size={16} />
-                Download
-              </button>
-              <a
-                href={`https://aramb.ai/try?skill=${encodeURIComponent(skill.full_id)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-all text-sm font-medium"
-              >
-                <span>Try with Aramb</span>
-                <ExternalLink size={14} />
-              </a>
-            </div>
-
-            {/* Repository Section */}
-            {skill.repo_owner && skill.repo_name && (
-              <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">
-                <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-                  Repository
-                </h3>
-                <a
-                  href={repoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-                  </svg>
-                  {skill.repo_owner}/{skill.repo_name}
-                </a>
-              </div>
-            )}
+            {/* Download Button */}
+            <button
+              onClick={handleDownload}
+              className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-all text-sm font-medium"
+            >
+              <Download size={16} />
+              Download
+            </button>
 
             {/* Stats Section */}
             <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">

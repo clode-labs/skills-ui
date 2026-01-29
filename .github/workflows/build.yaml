@@ -36,7 +36,7 @@ concurrency:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.ACTIONS_RUNNER }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

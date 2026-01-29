@@ -101,6 +101,12 @@ export const api = {
     return fetchAPI<CategoryListResponse>('/api/v1/categories')
   },
 
+  getCategorySkills: (slug: string, page = 1, limit = 20) => {
+    return fetchAPI<SkillListResponse>(
+      `/api/v1/categories/${slug}/skills?page=${page}&limit=${limit}`,
+    )
+  },
+
   getTags: (page = 1, limit = 100) => {
     return fetchAPI<TagListResponse>(`/api/v1/tags?page=${page}&limit=${limit}`)
   },

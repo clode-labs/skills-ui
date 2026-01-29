@@ -1,26 +1,51 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
-import { Loader2, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import {
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  ArrowRight,
+  Search,
+  Sparkles,
+  Github,
+  Send,
+  Download,
+} from 'lucide-react'
 
-import SkillCard from '../components/SkillCard'
+import SkillGridCard from '../components/SkillGridCard'
+import SkillListCard from '../components/SkillListCard'
+import SearchableSelect from '../components/SearchableSelect'
 import { api, authApi } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import type { Skill, Category, PaginationMeta } from '../types'
+import styles from './Home.module.css'
 
 const ITEMS_PER_PAGE = 20
+const LANDING_SKILLS_LIMIT = 8
+
+type PromptMode = 'discover' | 'build' | 'import'
 
 const Home = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const [skills, setSkills] = useState<Skill[]>([])
+  const [landingSkills, setLandingSkills] = useState<Skill[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
+  const [landingLoading, setLandingLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState('all')
+  const [selectedLandingCategory, setSelectedLandingCategory] = useState('all')
   const [pagination, setPagination] = useState<PaginationMeta | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const { isAuthenticated, signIn } = useAuth()
+  const { isAuthenticated, signIn, user } = useAuth()
   const navigate = useNavigate()
 
+  // Prompt section state
+  const [promptMode, setPromptMode] = useState<PromptMode>('discover')
+  const [promptValue, setPromptValue] = useState('')
+
   const searchQuery = searchParams.get('search') || ''
+  const hasSearchParam = searchParams.has('search')
   const categoryFromUrl = searchParams.get('category') || ''
   const tagsFromUrl = searchParams.get('tags') || ''
   const authorFromUrl = searchParams.get('author') || ''
@@ -29,9 +54,62 @@ const Home = () => {
   const [selectedTags, setSelectedTags] = useState(tagsFromUrl)
   const [selectedAuthor, setSelectedAuthor] = useState(authorFromUrl)
 
-  // Determine if we're on the "landing" view (no search, no category, no tags, no author)
+  // Determine if we're on the "landing" view (no search param at all, no category, no tags, no author)
   const isLandingView =
-    !searchQuery && !categoryFromUrl && !tagsFromUrl && !authorFromUrl
+    !hasSearchParam && !categoryFromUrl && !tagsFromUrl && !authorFromUrl
+
+  // Load categories on mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categoriesResponse = await api.getCategories()
+        setCategories(categoriesResponse.data)
+      } catch (error) {
+        console.error('Error loading categories:', error)
+      }
+    }
+    loadCategories()
+  }, [])
+
+  // Load landing page skills (featured/top skills)
+  const loadLandingSkills = useCallback(async () => {
+    try {
+      setLandingLoading(true)
+      let response
+
+      if (selectedLandingCategory === 'all') {
+        // Try featured first, fallback to first category if empty
+        response = await api.getFeaturedSkills()
+        if (response.data.length === 0 && categories.length > 0) {
+          // Fallback: get skills from the first category
+          response = await api.getCategorySkills(
+            categories[0].name,
+            1,
+            LANDING_SKILLS_LIMIT,
+          )
+        }
+      } else {
+        response = await api.getCategorySkills(
+          selectedLandingCategory,
+          1,
+          LANDING_SKILLS_LIMIT,
+        )
+      }
+
+      setLandingSkills(response.data.slice(0, LANDING_SKILLS_LIMIT))
+    } catch (error) {
+      console.error('Error loading landing skills:', error)
+      setLandingSkills([])
+    } finally {
+      setLandingLoading(false)
+    }
+  }, [selectedLandingCategory, categories])
+
+  useEffect(() => {
+    if (isLandingView && categories.length > 0) {
+      loadLandingSkills()
+    }
+  }, [isLandingView, selectedLandingCategory, categories, loadLandingSkills])
 
   // Sync with URL params
   useEffect(() => {
@@ -61,31 +139,36 @@ const Home = () => {
     try {
       setLoading(true)
 
-      // Load categories for filter dropdown
-      const categoriesResponse = await api.getCategories()
-      setCategories(categoriesResponse.data)
-
-      // Load skills based on filters
-      // Use authenticated search when logged in to include private skills
       let skillsResponse
       if (activeFilter === 'featured') {
         skillsResponse = await api.getFeaturedSkills()
       } else if (selectedAuthor) {
-        // Use author skills endpoint when filtering by author
         skillsResponse = await api.getAuthorSkills(
           selectedAuthor,
           currentPage,
           ITEMS_PER_PAGE,
         )
-      } else {
-        // Use unified search endpoint for all queries (search, category, tag filters)
+      } else if (selectedCategory) {
+        // Filter by category
+        skillsResponse = await api.getCategorySkills(
+          selectedCategory,
+          currentPage,
+          ITEMS_PER_PAGE,
+        )
+      } else if (searchQuery || selectedTags) {
+        // Use search API when there's a search query or tags filter
         const searchApi = isAuthenticated ? authApi : api
         skillsResponse = await searchApi.searchSkills({
           q: searchQuery || undefined,
-          category: selectedCategory || undefined,
           tag: selectedTags || undefined,
           page: currentPage,
           limit: ITEMS_PER_PAGE,
+        })
+      } else {
+        // No filters - get all skills
+        skillsResponse = await api.getSkills({
+          page: currentPage.toString(),
+          limit: ITEMS_PER_PAGE.toString(),
         })
       }
 
@@ -134,6 +217,10 @@ const Home = () => {
     setSearchParams(params)
   }
 
+  const handleLandingCategoryChange = (category: string) => {
+    setSelectedLandingCategory(category)
+  }
+
   const clearTagFilter = () => {
     setSelectedTags('')
     setCurrentPage(1)
@@ -150,6 +237,28 @@ const Home = () => {
     params.delete('page')
     params.delete('author')
     setSearchParams(params)
+  }
+
+  const handlePromptSubmit = () => {
+    if (!promptValue.trim()) return
+
+    if (promptMode === 'discover') {
+      navigate(`/?search=${encodeURIComponent(promptValue.trim())}`)
+    } else if (promptMode === 'import') {
+      if (isAuthenticated) {
+        navigate('/import')
+      } else {
+        signIn('/import')
+      }
+    }
+    setPromptValue('')
+  }
+
+  const handlePromptKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handlePromptSubmit()
+    }
   }
 
   const filters = [
@@ -187,167 +296,291 @@ const Home = () => {
     return pages
   }
 
-  // Handle Submit Skill button click
-  const handleSubmitSkill = () => {
-    if (isAuthenticated) {
-      navigate('/import')
-    } else {
-      // Trigger sign in with redirect to import page
-      signIn('/import')
-    }
-  }
-
-  // Landing view - only show hero section
+  // Landing view - Prompt Section + Top Skills grid
   if (isLandingView) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-[#0f172a]">
-        {/* Hero Content */}
-        <div className="max-w-6xl mx-auto px-4 pt-28 pb-10 md:pt-36 md:pb-14 w-full">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white mb-6 tracking-tight">
-              Build amazing
-              <br />
-              agents
-            </h1>
-            <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-4 max-w-2xl mx-auto">
-              The Agent Skills Registry is your destination for discovering and
-              sharing powerful skills that extend AI agent capabilities.
-            </p>
-            <p className="text-base text-slate-500 mb-10 max-w-xl mx-auto">
-              Take your agent development up a notch
-            </p>
+        {/* Prompt Section */}
+        <div className={styles.promptSection}>
+          <p className={styles.greeting}>
+            {isAuthenticated && user ? `Hi, ${user.name}!` : 'Hi There!'}
+          </p>
+          <h1 className={styles.mainQuestion}>What's your next big idea?</h1>
+          <p className={styles.subtitle}>
+            Discover. Build. Share.{' '}
+            <span className={styles.subtitleHighlight}>
+              Powerful skills for AI agents.
+            </span>
+          </p>
 
-            {/* Submit Skill Button */}
-            <button
-              onClick={handleSubmitSkill}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 transition-colors"
-            >
-              <Plus size={20} />
-              Submit Skill
-            </button>
+          {/* Input Wrapper */}
+          <div className={styles.inputWrapper}>
+            {/* Mode Tabs */}
+            <div className={styles.modeTabsContainer}>
+              <button
+                className={`${styles.modeTab} ${promptMode === 'discover' ? styles.modeTabActive : ''}`}
+                onClick={() => setPromptMode('discover')}
+              >
+                <Search size={16} />
+                <span>Discover</span>
+              </button>
+              <button
+                className={`${styles.modeTab} ${promptMode === 'build' ? styles.modeTabActive : ''}`}
+                onClick={() => setPromptMode('build')}
+              >
+                <Send size={16} />
+                <span>Build</span>
+              </button>
+              <button
+                className={`${styles.modeTab} ${promptMode === 'import' ? styles.modeTabActive : ''}`}
+                onClick={() => setPromptMode('import')}
+              >
+                <Download size={16} />
+                <span>Import</span>
+              </button>
+            </div>
+
+            {/* Input Container */}
+            <div className={styles.inputContainer}>
+              <textarea
+                value={promptValue}
+                onChange={e => setPromptValue(e.target.value)}
+                onKeyDown={handlePromptKeyDown}
+                placeholder={
+                  promptMode === 'discover'
+                    ? 'Search for skills... e.g. "file management", "API integration"'
+                    : promptMode === 'build'
+                      ? 'Describe the skill you want to build...'
+                      : 'Paste a GitHub URL to import a skill...'
+                }
+                className={styles.promptInput}
+                rows={2}
+              />
+              <div className={styles.inputActions}>
+                <div className={styles.inputActionsLeft}>
+                  <button
+                    className={styles.actionButton}
+                    title="Add from GitHub"
+                  >
+                    <Github size={16} />
+                  </button>
+                  <button
+                    className={styles.actionButton}
+                    title="AI Suggestions"
+                  >
+                    <Sparkles size={16} />
+                  </button>
+                  <button
+                    className={styles.actionButton}
+                    title="Add attachment"
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+                <div className={styles.inputActionsRight}>
+                  <button
+                    className={styles.sendButton}
+                    onClick={handlePromptSubmit}
+                    disabled={!promptValue.trim()}
+                    title={
+                      promptMode === 'discover'
+                        ? 'Search'
+                        : promptMode === 'build'
+                          ? 'Build'
+                          : 'Import'
+                    }
+                  >
+                    {promptMode === 'discover' && (
+                      <Search size={18} color="#fff" />
+                    )}
+                    {promptMode === 'build' && <Send size={18} color="#fff" />}
+                    {promptMode === 'import' && (
+                      <Download size={18} color="#fff" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Top Skills Section */}
+        <div className="max-w-6xl mx-auto px-4">
+          <div className={styles.skillsSection}>
+            {/* Section Header */}
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeaderLeft}>
+                <h2 className={styles.sectionTitle}>Top Skills</h2>
+                <p className={styles.sectionSubtitle}>
+                  Explore what the community is building
+                </p>
+              </div>
+              <Link to="/skills?search=" className={styles.viewAllLink}>
+                View All
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+
+            {/* Category Filter Pills */}
+            <div className={styles.categoryFilters}>
+              <button
+                onClick={() => handleLandingCategoryChange('all')}
+                className={`${styles.categoryButton} ${
+                  selectedLandingCategory === 'all'
+                    ? styles.categoryButtonActive
+                    : ''
+                }`}
+              >
+                All
+              </button>
+              {categories.slice(0, 5).map(category => (
+                <button
+                  key={category.id}
+                  onClick={() => handleLandingCategoryChange(category.name)}
+                  className={`${styles.categoryButton} ${
+                    selectedLandingCategory === category.name
+                      ? styles.categoryButtonActive
+                      : ''
+                  }`}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+
+            {/* Skills Grid */}
+            {landingLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="animate-spin text-slate-500" size={28} />
+              </div>
+            ) : landingSkills.length === 0 ? (
+              <div className="text-center py-20">
+                <p className="text-slate-500 text-[14px]">No skills found</p>
+              </div>
+            ) : (
+              <div className={styles.skillsGrid}>
+                {landingSkills.map(skill => (
+                  <SkillGridCard key={skill.id} skill={skill} />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
     )
   }
 
-  // Search results view
+  // Search results / All skills view
   return (
-    <div className="bg-slate-50 dark:bg-[#0f172a] min-h-screen">
-      {/* Navigation Tabs */}
-      <div className="border-b border-slate-200 dark:border-slate-700/50 bg-white dark:bg-[#0f172a]">
-        <div className="max-w-6xl mx-auto px-4">
-          <nav className="flex items-center gap-1">
-            <Link
-              to="/skills"
-              className="px-4 py-3 text-[13px] font-semibold text-slate-900 dark:text-white border-b-2 border-violet-500 -mb-px"
-            >
-              Skills
-            </Link>
-          </nav>
-        </div>
-      </div>
+    <div className="min-h-screen bg-white dark:bg-[#0f172a]">
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        {/* Header row */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-[15px] font-semibold text-slate-900 dark:text-white">
+            {searchQuery ? (
+              <>
+                {totalSkills.toLocaleString()} results for "{searchQuery}"
+              </>
+            ) : (
+              <>{totalSkills.toLocaleString()} skills found</>
+            )}
+          </div>
 
-      {/* Content Section */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* Header with count and filters */}
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2">
-            <h2 className="text-[15px] font-semibold text-slate-900 dark:text-white">
-              {searchQuery ? (
-                <>
-                  {totalSkills} {totalSkills === 1 ? 'skill' : 'skills'} found
-                  for "{searchQuery}"
-                </>
-              ) : activeFilter === 'featured' ? (
-                'Featured Skills'
-              ) : selectedAuthor ? (
-                `Skills by ${selectedAuthor}`
-              ) : selectedCategory ? (
-                `${selectedCategory} Skills`
-              ) : selectedTags ? (
-                `Skills tagged "${selectedTags}"`
-              ) : (
-                `${totalSkills} skills`
-              )}
-            </h2>
+          {/* Dropdowns */}
+          <div className="flex items-center gap-3">
+            {/* Category dropdown */}
+            <SearchableSelect
+              options={[
+                { value: '', label: 'All Categories' },
+                ...categories.map(cat => ({
+                  value: cat.name,
+                  label: cat.name,
+                })),
+              ]}
+              value={selectedCategory}
+              onChange={handleCategoryChange}
+              placeholder="All Categories"
+              searchPlaceholder="Search categories..."
+            />
+
+            {/* Sort dropdown */}
+            <select
+              value={activeFilter}
+              onChange={e => handleFilterChange(e.target.value)}
+              className="text-[13px] px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all cursor-pointer"
+            >
+              {filters.map(filter => (
+                <option key={filter.id} value={filter.id}>
+                  Sort: {filter.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Active filters */}
+        {(selectedTags || selectedAuthor || selectedCategory) && (
+          <div className="flex items-center gap-2 mb-4">
+            {selectedCategory && (
+              <button
+                onClick={() => handleCategoryChange('')}
+                className="text-[12px] px-2.5 py-1 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 rounded-full hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors flex items-center gap-1"
+              >
+                {selectedCategory} <span className="ml-1">×</span>
+              </button>
+            )}
             {selectedTags && (
               <button
                 onClick={clearTagFilter}
-                className="text-[12px] px-2 py-1 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                className="text-[12px] px-2.5 py-1 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 rounded-full hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors flex items-center gap-1"
               >
-                Clear tag
+                {selectedTags} <span className="ml-1">×</span>
               </button>
             )}
             {selectedAuthor && (
               <button
                 onClick={clearAuthorFilter}
-                className="text-[12px] px-2 py-1 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                className="text-[12px] px-2.5 py-1 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 rounded-full hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors flex items-center gap-1"
               >
-                Clear author
+                @{selectedAuthor} <span className="ml-1">×</span>
               </button>
             )}
           </div>
-
-          <div className="flex items-center gap-2">
-            <select
-              value={activeFilter}
-              onChange={e => handleFilterChange(e.target.value)}
-              className="text-[13px] px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-slate-600 focus:border-violet-500 dark:focus:border-slate-600 transition-all cursor-pointer"
-            >
-              {filters.map(filter => (
-                <option key={filter.id} value={filter.id}>
-                  {filter.label}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedCategory}
-              onChange={e => handleCategoryChange(e.target.value)}
-              className="text-[13px] px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-slate-600 focus:border-violet-500 dark:focus:border-slate-600 transition-all cursor-pointer"
-            >
-              <option value="">All Categories</option>
-              {categories.map(category => (
-                <option key={category.id} value={category.name}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+        )}
 
         {/* Skills List */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="animate-spin text-slate-500" size={28} />
+            <Loader2 className="animate-spin text-slate-400" size={24} />
           </div>
         ) : skills.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-slate-500 text-[14px]">No skills found</p>
+            <p className="text-slate-500 dark:text-slate-400 text-[14px]">
+              No skills found
+            </p>
           </div>
         ) : (
           <>
-            <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden">
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
               {skills.map(skill => (
-                <SkillCard key={skill.id} skill={skill} />
+                <SkillListCard key={skill.id} skill={skill} />
               ))}
             </div>
 
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between pt-6 mt-2">
-                <div className="text-[12px] text-slate-500">
+                <div className="text-[13px] text-slate-500 dark:text-slate-400">
                   Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
                   {Math.min(currentPage * ITEMS_PER_PAGE, totalSkills)} of{' '}
-                  {totalSkills}
+                  {totalSkills.toLocaleString()}
                 </div>
 
-                <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-1">
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
                     <ChevronLeft size={18} />
                   </button>
@@ -358,16 +591,16 @@ const Home = () => {
                         key={`ellipsis-${index}`}
                         className="px-2 py-1 text-slate-400 dark:text-slate-600 text-[13px]"
                       >
-                        …
+                        ...
                       </span>
                     ) : (
                       <button
                         key={page}
                         onClick={() => handlePageChange(page as number)}
-                        className={`w-8 h-8 rounded-lg text-[13px] font-medium transition-all ${
+                        className={`w-9 h-9 rounded-lg text-[13px] font-medium transition-all ${
                           currentPage === page
-                            ? 'bg-violet-600 text-white'
-                            : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                            ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+                            : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
                         }`}
                       >
                         {page}
@@ -378,7 +611,7 @@ const Home = () => {
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
                     <ChevronRight size={18} />
                   </button>
