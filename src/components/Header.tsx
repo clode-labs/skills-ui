@@ -6,7 +6,7 @@ import { api, authApi } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import ThemeToggle from './ThemeToggle'
-import clodeLogo from '../assets/images/clode_logo.png'
+import arambLogo from '../assets/images/aramb_logo.png'
 import type { Skill } from '../types'
 
 interface HeaderProps {
@@ -79,8 +79,8 @@ const Header = ({ onSearch }: HeaderProps) => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 shrink-0">
             <img
-              src={clodeLogo}
-              alt="Clode"
+              src={arambLogo}
+              alt="Aramb"
               className={`w-9 h-9 ${resolvedTheme === 'light' ? 'invert' : ''}`}
             />
           </Link>
