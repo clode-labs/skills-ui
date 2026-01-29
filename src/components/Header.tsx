@@ -109,28 +109,30 @@ const Header = ({ onSearch }: HeaderProps) => {
 
             {/* Search Suggestions Dropdown */}
             {showSuggestions && searchQuery.trim().length >= 2 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded shadow-lg border border-gray-200 overflow-hidden z-50">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 overflow-hidden z-50">
                 {loading ? (
-                  <div className="p-3 text-gray-500 text-sm">Searching...</div>
+                  <div className="p-4 text-gray-500 dark:text-slate-400 text-[15px]">
+                    Searching...
+                  </div>
                 ) : suggestions.length > 0 ? (
-                  <ul>
+                  <ul className="max-h-[320px] overflow-y-auto">
                     {suggestions.map(skill => (
                       <li key={skill.id}>
                         <Link
                           to={`/skills/${skill.full_id}`}
                           onClick={() => setShowSuggestions(false)}
-                          className="block px-4 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                          className="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700/50 border-b border-gray-100 dark:border-slate-700 last:border-b-0 transition-colors"
                         >
-                          <div className="flex items-center gap-2 font-medium text-sm text-gray-900">
+                          <div className="flex items-center gap-2 font-semibold text-[16px] text-gray-900 dark:text-white">
                             {skill.name}
                             {skill.is_private && (
-                              <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-medium rounded">
+                              <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 text-[11px] font-medium rounded">
                                 <Lock size={10} />
                                 Private
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-gray-500 truncate">
+                          <div className="text-[14px] text-gray-500 dark:text-slate-400 truncate mt-1">
                             {skill.description}
                           </div>
                         </Link>
@@ -138,7 +140,7 @@ const Header = ({ onSearch }: HeaderProps) => {
                     ))}
                   </ul>
                 ) : (
-                  <div className="p-3 text-gray-500 text-sm">
+                  <div className="p-4 text-gray-500 dark:text-slate-400 text-[15px]">
                     No skills found
                   </div>
                 )}
