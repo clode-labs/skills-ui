@@ -743,15 +743,36 @@
   background: #334155;
 }
 
+.mentionItemHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+  flex-wrap: wrap;
+}
+
 .mentionItemName {
   font-size: 0.9375rem;
   font-weight: 600;
   color: #0f172a;
-  margin-bottom: 0.25rem;
 }
 
 :global(.dark) .mentionItemName {
   color: #f1f5f9;
+}
+
+.mentionItemRepo {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+:global(.dark) .mentionItemRepo {
+  color: #94a3b8;
+  background: #334155;
 }
 
 .mentionItemDesc {

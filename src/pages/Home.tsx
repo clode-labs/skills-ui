@@ -543,8 +543,15 @@ const Home = () => {
                                   : ''
                               }`}
                             >
-                              <div className={styles.mentionItemName}>
-                                {skill.name}
+                              <div className={styles.mentionItemHeader}>
+                                <div className={styles.mentionItemName}>
+                                  {skill.full_id || skill.slug}
+                                </div>
+                                {skill.repo_owner && skill.repo_name && (
+                                  <span className={styles.mentionItemRepo}>
+                                    {skill.repo_owner}/{skill.repo_name}
+                                  </span>
+                                )}
                               </div>
                               <div className={styles.mentionItemDesc}>
                                 {skill.description}
