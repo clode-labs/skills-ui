@@ -125,13 +125,11 @@ const Header = ({ onSearch }: HeaderProps) => {
                         >
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-semibold text-[16px] text-gray-900 dark:text-white">
-                              {skill.full_id || skill.slug}
+                              {skill.name}
                             </span>
-                            {skill.repo_owner && skill.repo_name && (
-                              <span className="text-[12px] font-medium text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded">
-                                {skill.repo_owner}/{skill.repo_name}
-                              </span>
-                            )}
+                            <span className="text-[12px] font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/30 px-2 py-0.5 rounded">
+                              {skill.owner_id}/{skill.slug}
+                            </span>
                             {skill.is_private && (
                               <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 text-[11px] font-medium rounded">
                                 <Lock size={10} />
