@@ -121,26 +121,39 @@ const Header = ({ onSearch }: HeaderProps) => {
                         <Link
                           to={`/skills/${skill.full_id}`}
                           onClick={() => setShowSuggestions(false)}
-                          className="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700/50 border-b border-gray-100 dark:border-slate-700 last:border-b-0 transition-colors"
+                          className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700/50 border-b border-gray-100 dark:border-slate-700 last:border-b-0 transition-colors"
                         >
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-[16px] text-gray-900 dark:text-white">
-                              {skill.name}
-                            </span>
-                            {skill.repo_owner && skill.repo_name && (
-                              <span className="text-[12px] font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/30 px-2 py-0.5 rounded">
-                                {skill.repo_owner}/{skill.repo_name}
+                          {/* Avatar */}
+                          {skill.author_avatar_url ? (
+                            <img
+                              src={skill.author_avatar_url}
+                              alt={skill.author_name || ''}
+                              className="w-8 h-8 rounded-full shrink-0 mt-0.5"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-600 shrink-0 mt-0.5" />
+                          )}
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-semibold text-[16px] text-gray-900 dark:text-white">
+                                {skill.name}
                               </span>
-                            )}
-                            {skill.is_private && (
-                              <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 text-[11px] font-medium rounded">
-                                <Lock size={10} />
-                                Private
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-[14px] text-gray-500 dark:text-slate-400 truncate mt-1">
-                            {skill.description}
+                              {skill.repo_id && (
+                                <span className="text-[12px] font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/30 px-2 py-0.5 rounded">
+                                  {skill.repo_id}
+                                </span>
+                              )}
+                              {skill.is_private && (
+                                <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 text-[11px] font-medium rounded">
+                                  <Lock size={10} />
+                                  Private
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[14px] text-gray-500 dark:text-slate-400 truncate mt-1">
+                              {skill.description}
+                            </div>
                           </div>
                         </Link>
                       </li>

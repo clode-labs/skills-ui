@@ -743,6 +743,36 @@
   background: #334155;
 }
 
+.mentionItemContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.mentionItemAvatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.mentionItemAvatarPlaceholder {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+
+:global(.dark) .mentionItemAvatarPlaceholder {
+  background: #475569;
+}
+
+.mentionItemText {
+  flex: 1;
+  min-width: 0;
+}
+
 .mentionItemHeader {
   display: flex;
   align-items: center;
@@ -764,15 +794,15 @@
 .mentionItemRepo {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #64748b;
-  background: #f1f5f9;
+  color: #7c3aed;
+  background: #f5f3ff;
   padding: 0.125rem 0.5rem;
   border-radius: 0.25rem;
 }
 
 :global(.dark) .mentionItemRepo {
-  color: #94a3b8;
-  background: #334155;
+  color: #a78bfa;
+  background: rgba(124, 58, 237, 0.2);
 }
 
 .mentionItemDesc {
