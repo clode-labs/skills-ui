@@ -543,18 +543,37 @@ const Home = () => {
                                   : ''
                               }`}
                             >
-                              <div className={styles.mentionItemHeader}>
-                                <div className={styles.mentionItemName}>
-                                  {skill.full_id || skill.slug}
-                                </div>
-                                {skill.repo_owner && skill.repo_name && (
-                                  <span className={styles.mentionItemRepo}>
-                                    {skill.repo_owner}/{skill.repo_name}
-                                  </span>
+                              <div className={styles.mentionItemContent}>
+                                {/* Avatar */}
+                                {skill.author_avatar_url ? (
+                                  <img
+                                    src={skill.author_avatar_url}
+                                    alt={skill.author_name || ''}
+                                    className={styles.mentionItemAvatar}
+                                  />
+                                ) : (
+                                  <div
+                                    className={
+                                      styles.mentionItemAvatarPlaceholder
+                                    }
+                                  />
                                 )}
-                              </div>
-                              <div className={styles.mentionItemDesc}>
-                                {skill.description}
+                                {/* Text */}
+                                <div className={styles.mentionItemText}>
+                                  <div className={styles.mentionItemHeader}>
+                                    <div className={styles.mentionItemName}>
+                                      {skill.name}
+                                    </div>
+                                    {skill.repo_id && (
+                                      <span className={styles.mentionItemRepo}>
+                                        {skill.repo_id}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className={styles.mentionItemDesc}>
+                                    {skill.description}
+                                  </div>
+                                </div>
                               </div>
                             </button>
                           </li>
